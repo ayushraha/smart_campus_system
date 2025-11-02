@@ -1,5 +1,5 @@
 // ============================================
-// UPDATED: backend/server.js (or index.js)
+// FINAL: backend/server.js (Corrected)
 // ============================================
 
 const express = require('express');
@@ -57,16 +57,29 @@ mongoose.connection.on('error', (err) => {
   console.error('❌ MongoDB error:', err.message);
 });
 
-// ✅ Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/student', require('./routes/student'));
-app.use('/api/recruiter', require('./routes/recruiter'));
-app.use('/api/jobs', require('./routes/jobs'));
-app.use('/api/applications', require('./routes/applications'));
-app.use('/api/interview', require('./routes/Interview'));
-app.use('/api/resume', require('./routes/resume'));
-app.use('/api/ai-chat', require('./routes/aiChat'));
+// ✅ Routes (IMPORT BEFORE USING)
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const studentRoutes = require('./routes/student');
+const recruiterRoutes = require('./routes/recruiter');
+const jobRoutes = require('./routes/jobs');
+const applicationRoutes = require('./routes/applications');
+const interviewRoutes = require('./routes/Interview');
+const resumeRoutes = require('./routes/resume');
+const aiChatRoutes = require('./routes/aiChat');
+const resumeParserRoutes = require('./routes/resumeParser');
+
+// ✅ Register Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/student', studentRoutes);
+app.use('/api/recruiter', recruiterRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/interview', interviewRoutes);
+app.use('/api/resume', resumeRoutes);
+app.use('/api/ai-chat', aiChatRoutes);
+app.use('/api/resume-parser', resumeParserRoutes);
 
 // ✅ Health check endpoint
 app.get('/health', (req, res) => {
@@ -78,7 +91,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ✅ 404 handler
+// ✅ 404 handler (before error middleware)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -91,6 +104,20 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err);
   
+  // Multer error handling
+  if (err.name === 'MulterError') {
+    if (err.code === 'FILE_TOO_LARGE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File too large. Maximum size: 5MB'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+
   // Mongoose validation error
   if (err.name === 'ValidationError') {
     return res.status(400).json({
@@ -124,4 +151,5 @@ app.listen(PORT, () => {
   console.log(`📝 API Documentation:`);
   console.log(`   - Health: GET http://localhost:${PORT}/health`);
   console.log(`   - AI Chat: /api/ai-chat/*`);
+  console.log(`   - Resume Parser: /api/resume-parser/*`);
 });

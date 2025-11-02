@@ -1,0 +1,63 @@
+JOHN SMITH
+Email: john.smith@email.com
+Phone: +1-555-123-4567
+Location: San Francisco, CA
+
+PROFESSIONAL SUMMARY
+Experienced Full-Stack Developer with 6 years of expertise in building scalable web applications using modern technologies. Proven track record of delivering high-quality software solutions and leading cross-functional teams.
+
+TECHNICAL SKILLS
+Languages: JavaScript, Python, Java, TypeScript, SQL, HTML5, CSS3
+Frontend: React.js, Vue.js, Angular, Redux, Material-UI, Bootstrap
+Backend: Node.js, Express.js, Django, Flask, Spring Boot, REST APIs
+Databases: MongoDB, PostgreSQL, MySQL, Firebase, Redis
+Cloud & DevOps: AWS (EC2, S3, Lambda), Docker, Kubernetes, CI/CD, Jenkins
+Tools & Platforms: Git, GitHub, Jira, Postman, VSCode, Linux
+
+PROFESSIONAL EXPERIENCE
+
+Senior Full-Stack Developer
+Tech Innovations Inc. | San Francisco, CA | January 2021 - Present
+- Led development of 15+ production web applications serving 500K+ users
+- Architected microservices infrastructure reducing server costs by 40%
+- Mentored 8 junior developers and conducted code reviews
+- Implemented automated testing increasing code coverage to 95%
+- Optimized database queries improving application performance by 60%
+
+Full-Stack Developer
+Digital Solutions Ltd. | San Jose, CA | June 2018 - December 2020
+- Developed responsive web applications using React and Node.js
+- Built RESTful APIs serving 100K daily active users
+- Collaborated with design team to implement UI/UX improvements
+- Implemented AWS infrastructure for high-availability deployment
+- Reduced application load time by 50% through optimization
+
+Junior Developer
+StartUp Ventures | Palo Alto, CA | July 2017 - May 2018
+- Developed front-end components using React.js and Redux
+- Created backend services using Node.js and Express
+- Fixed 200+ bugs and implemented feature requests
+- Participated in agile development with 2-week sprints
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+University of California, Berkeley | Berkeley, CA
+Graduation: May 2017 | GPA: 3.9/4.0
+
+CERTIFICATIONS & AWARDS
+- AWS Certified Solutions Architect - Associate (2022)
+- MongoDB Certified Developer Associate (2021)
+- Google Cloud Professional Cloud Architect (2020)
+- Employee of the Year - Tech Innovations Inc. (2022)
+
+PROJECTS & ACHIEVEMENTS
+- Developed real-time chat application with 50K+ users
+- Built AI-powered recommendation engine increasing sales by 35%
+- Created mobile-responsive e-commerce platform
+- Open-source contributor with 1000+ GitHub stars
+
+LANGUAGES
+- English (Fluent)
+- Spanish (Professional Working Proficiency)
+- Mandarin Chinese (Basic)
