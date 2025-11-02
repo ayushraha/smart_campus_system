@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
+import { Zap } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -13,6 +14,7 @@ import InterviewRoom from './pages/Interview/InterviewRoom';
 import InterviewAnalysis from './pages/Interview/InterviewAnalysis';
 import './App.css';
 import AIChat from './pages/Student/AIChat';
+import PremiumResumeParser from "./pages/Student/PremiumResumeParser";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -191,16 +193,26 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+
             {/* AI Chat Route */}
-            {/* AI Chat Route */}
-<Route 
-  path="/student/ai-chat" 
-  element={
-    <ProtectedRoute allowedRoles={['student']}>
-      <AIChat />
-    </ProtectedRoute>
-  } 
-/>
+            <Route 
+              path="/student/ai-chat" 
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <AIChat />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Premium Resume Parser Route */}
+            <Route 
+              path="/student/premium-resume-parser" 
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <PremiumResumeParser />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Role-based Dashboards */}
             <Route 
@@ -256,3 +268,16 @@ function App() {
 }
 
 export default App;
+
+// Navigation Component for Student Sidebar/Menu
+export const PremiumResumeParserNav = () => {
+  return (
+    <NavLink 
+      to="/student/premium-resume-parser"
+      className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+    >
+      <Zap size={20} />
+      <span>Premium Resume Parser</span>
+    </NavLink>
+  );
+};

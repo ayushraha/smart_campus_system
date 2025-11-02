@@ -4,8 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { FiHome, FiBriefcase, FiFileText, FiUser, FiLogOut, FiVideo, FiFile } from 'react-icons/fi';
 import '../Admin/Admin.css'; // Use Admin CSS as base
 import './Student.css';
-import { MessageCircle } from "lucide-react";
-
+import { MessageCircle, Zap } from "lucide-react"; // ADD Zap import
 
 import Overview from './Overview';
 import Jobs from './Jobs';
@@ -14,6 +13,7 @@ import Profile from './Profile';
 import Interviews from './Interviews';
 import ResumeList from './ResumeList';
 import ResumeBuilder from './ResumeBuilder';
+import PremiumResumeParser from './PremiumResumeParser'; // ADD THIS IMPORT
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -67,6 +67,16 @@ const Dashboard = () => {
           <Link to="/student/ai-chat">
              <MessageCircle size={20} /> AI Assistant
           </Link>
+          
+          {/* ADD THIS NEW LINK */}
+          <Link 
+            to="/student/premium-resume-parser" 
+            className={activeTab === 'premium-resume-parser' ? 'active' : ''}
+            onClick={() => setActiveTab('premium-resume-parser')}
+          >
+            <Zap size={20} /> Premium Resume Parser
+          </Link>
+
           <Link 
             to="/student/applications" 
             className={activeTab === 'applications' ? 'active' : ''}
@@ -107,6 +117,9 @@ const Dashboard = () => {
           <Route path="/applications" element={<Applications />} />
           <Route path="/interviews" element={<Interviews />} />
           <Route path="/profile" element={<Profile />} />
+          
+          {/* ADD THIS NEW ROUTE */}
+          <Route path="/premium-resume-parser" element={<PremiumResumeParser />} />
         </Routes>
       </main>
     </div>
