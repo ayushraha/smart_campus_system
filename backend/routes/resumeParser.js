@@ -28,8 +28,7 @@ if (!apiKey) {
 
 let pdfParse = null;
 try {
-  const pdfParseModule = require("pdf-parse");
-  pdfParse = pdfParseModule.default || pdfParseModule;
+  pdfParse = require("pdf-parse");
   console.log("✅ pdf-parse loaded successfully");
 } catch (err) {
   console.warn("⚠️  pdf-parse module not available:", err.message);
@@ -381,7 +380,7 @@ router.post("/parse", authMiddleware, upload.single("resume"), async (req, res) 
       try { fs.unlinkSync(filePath); } catch (e) {}
       return res.status(400).json({ 
         success: false, 
-        error: `Failed to extract text from file: ${extractError.message}. Make sure the file is not a scanned image.`
+        error: `Failed to extract text: ${extractError.message}`
       });
     }
 
@@ -390,7 +389,7 @@ router.post("/parse", authMiddleware, upload.single("resume"), async (req, res) 
       try { fs.unlinkSync(filePath); } catch (e) {}
       return res.status(400).json({ 
         success: false, 
-        error: "No readable text found in the uploaded file. The file might be a scanned image, corrupted, or in an unsupported format. Please upload a text-based PDF or Word document."
+        error: "No readable text found in the uploaded file."
       });
     }
 
