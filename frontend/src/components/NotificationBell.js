@@ -4,7 +4,7 @@ import { Bell, X, Check, CheckCheck, Calendar, Clock, Briefcase } from 'lucide-r
 import axios from 'axios';
 import './NotificationBell.css';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const typeIcon = (type) => {
   switch (type) {

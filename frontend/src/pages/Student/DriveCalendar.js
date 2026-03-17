@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { ChevronLeft, ChevronRight, Plus, X, MapPin, Clock, Users, Star } from 'lucide-react';
 import './DriveCalendar.css';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];

@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { MapPin, Users, Clock, Briefcase, ChevronRight } from 'lucide-react';
 import './CreateDriveEvent.css';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const TOKEN = () => localStorage.getItem('token');
 
 const DEPARTMENTS = [
