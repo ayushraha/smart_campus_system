@@ -332,8 +332,8 @@ export default function QRScanner() {
       
       console.log("🔍 Searching for:", searchTerm);
       console.log("Token present:", !!token);
-
-      const response = await fetch(`/api/student-profile/admin/search/${searchTerm}`, {
+      const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+      const response = await fetch(`${API_BASE}/api/student-profile/admin/search/${searchTerm}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

@@ -358,7 +358,8 @@ export default function StudentProfileForm() {
       console.log("📤 Submitting profile data...");
       console.log("Profile data:", profileData);
 
-      const response = await fetch('/api/student-profile/create-profile', {
+      const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+      const response = await fetch(`${API_BASE}/api/student-profile/create-profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

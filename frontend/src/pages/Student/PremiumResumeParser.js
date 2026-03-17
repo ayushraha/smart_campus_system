@@ -823,7 +823,8 @@ export default function PremiumResumeParser() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/resume-parser/history', {
+      const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+      const response = await fetch(`${API_BASE}/api/resume-parser/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -857,7 +858,8 @@ export default function PremiumResumeParser() {
       formData.append('resume', file);
 
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/resume-parser/parse', {
+      const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+      const response = await fetch(`${API_BASE}/api/resume-parser/parse`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -885,7 +887,8 @@ export default function PremiumResumeParser() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/resume-parser/${id}`, {
+      const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+      const response = await fetch(`${API_BASE}/api/resume-parser/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -912,7 +915,8 @@ export default function PremiumResumeParser() {
       setComparing(true);
       setError('');
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/resume-parser/compare/${selectedAnalysis.analysisId}`, {
+      const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+      const response = await fetch(`${API_BASE}/api/resume-parser/compare/${selectedAnalysis.analysisId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
