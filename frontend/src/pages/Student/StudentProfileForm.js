@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Download } from 'lucide-react';
 
 const styles = `
