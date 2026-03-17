@@ -43,12 +43,10 @@ export const mentorApi = {
       console.log('✅ Mentors fetched successfully:', response.data.length);
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching mentors:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to fetch mentors',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to fetch mentors');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -66,12 +64,10 @@ export const mentorApi = {
       console.log('✅ Mentor profile fetched:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching mentor profile:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to fetch mentor profile',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to fetch mentor profile');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -98,12 +94,10 @@ export const mentorApi = {
       console.log('✅ Mentor registered successfully:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error registering as mentor:', error);
-      throw {
-        message: error.response?.data?.message || error.message || 'Failed to register as mentor',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || error.message || 'Failed to register as mentor');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -122,12 +116,10 @@ export const mentorApi = {
       console.log('✅ Mentor profile updated:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error updating mentor profile:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to update mentor profile',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to update mentor profile');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -155,12 +147,10 @@ export const mentorApi = {
       console.log('✅ Message sent successfully:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error sending message:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to send message',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to send message');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -178,12 +168,10 @@ export const mentorApi = {
       console.log('✅ Messages fetched:', response.data.length, 'messages');
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching messages:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to fetch messages',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to fetch messages');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -205,12 +193,10 @@ export const mentorApi = {
       console.log('✅ Session booked successfully:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error booking session:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to book session',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to book session');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -228,12 +214,10 @@ export const mentorApi = {
       console.log('✅ Sessions fetched:', response.data.length, 'sessions');
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching sessions:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to fetch sessions',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to fetch sessions');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -260,12 +244,10 @@ export const mentorApi = {
       console.log('✅ Session rated successfully:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error rating session:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to rate session',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to rate session');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -283,12 +265,10 @@ export const mentorApi = {
       console.log('✅ Message marked as helpful:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error marking message helpful:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to mark message helpful',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to mark message helpful');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -308,12 +288,10 @@ export const mentorApi = {
       console.log('✅ Search results:', response.data.length, 'mentors found');
       return response.data;
     } catch (error) {
-      console.error('❌ Error searching mentors:', error);
-      throw {
-        message: error.response?.data?.message || 'Search failed',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Search failed');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -333,12 +311,10 @@ export const mentorApi = {
       console.log('✅ Mentors with skill fetched:', response.data.length);
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching mentors by skill:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to fetch mentors by skill',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to fetch mentors by skill');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
@@ -358,12 +334,10 @@ export const mentorApi = {
       console.log('✅ Mentors from company fetched:', response.data.length);
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching mentors by company:', error);
-      throw {
-        message: error.response?.data?.message || 'Failed to fetch mentors by company',
-        status: error.response?.status,
-        error: error
-      };
+      const errObj = new Error(error.response?.data?.message || 'Failed to fetch mentors by company');
+      errObj.status = error.response?.status;
+      errObj.originalError = error;
+      throw errObj;
     }
   },
 
