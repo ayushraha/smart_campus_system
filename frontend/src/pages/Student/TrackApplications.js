@@ -4,9 +4,9 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './TrackApplications.css';
 import {
-  Search, Filter, RefreshCw, Briefcase, MapPin, Clock,
-  ChevronDown, ChevronUp, Trash2, ExternalLink, CheckCircle,
-  XCircle, AlertCircle, Calendar, Building
+  Search, RefreshCw, Briefcase, MapPin, Clock,
+  ChevronDown, ChevronUp, Trash2, ExternalLink,
+  Building
 } from 'lucide-react';
 
 const API     = process.env.REACT_APP_API_URL;

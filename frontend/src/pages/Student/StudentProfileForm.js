@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Download, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 const styles = `
   .profile-form-container {
