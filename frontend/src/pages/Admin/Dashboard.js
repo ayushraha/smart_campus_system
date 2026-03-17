@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { FiHome, FiUsers, FiBriefcase, FiFileText, FiLogOut, FiBarChart2 } from 'react-icons/fi';
+import { QrCode } from 'lucide-react'; // ADD QrCode import
 import './Admin.css';
 
 import Overview from './Overview';
@@ -9,6 +10,7 @@ import Users from './Users';
 import Jobs from './Jobs';
 import Applications from './Applications';
 import Reports from './Reports';
+import QRScanner from './QRScanner'; // ADD THIS IMPORT
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -64,6 +66,15 @@ const Dashboard = () => {
           >
             <FiBarChart2 /> Reports
           </Link>
+
+          {/* ADD THIS NEW LINK */}
+          <Link 
+            to="/admin/qr-scanner" 
+            className={activeTab === 'qr-scanner' ? 'active' : ''}
+            onClick={() => setActiveTab('qr-scanner')}
+          >
+            <QrCode size={20} /> QR Scanner
+          </Link>
         </nav>
 
         <div className="sidebar-footer">
@@ -80,6 +91,9 @@ const Dashboard = () => {
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/applications" element={<Applications />} />
           <Route path="/reports" element={<Reports />} />
+          
+          {/* ADD THIS NEW ROUTE */}
+          <Route path="/qr-scanner" element={<QRScanner />} />
         </Routes>
       </main>
     </div>

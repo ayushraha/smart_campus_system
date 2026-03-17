@@ -28,9 +28,9 @@ const resumeSchema = new mongoose.Schema({
     degree: String,
     institution: String,
     location: String,
-    startDate: Date,
-    endDate: Date,
-    cgpa: Number,
+    startDate: String,
+    endDate: String,
+    cgpa: mongoose.Schema.Types.Mixed,
     maxCgpa: Number,
     percentage: Number,
     major: String,
@@ -42,8 +42,8 @@ const resumeSchema = new mongoose.Schema({
     title: String,
     company: String,
     location: String,
-    startDate: Date,
-    endDate: Date,
+    startDate: String,
+    endDate: String,
     current: Boolean,
     description: String,
     responsibilities: [String],
@@ -56,8 +56,8 @@ const resumeSchema = new mongoose.Schema({
     description: String,
     technologies: [String],
     role: String,
-    startDate: Date,
-    endDate: Date,
+    startDate: String,
+    endDate: String,
     url: String,
     github: String,
     highlights: [String]
@@ -67,10 +67,7 @@ const resumeSchema = new mongoose.Schema({
   skills: {
     technical: [String],
     soft: [String],
-    languages: [{
-      name: String,
-      proficiency: String // Beginner, Intermediate, Advanced, Native
-    }],
+    languages: [String],
     tools: [String],
     frameworks: [String]
   },

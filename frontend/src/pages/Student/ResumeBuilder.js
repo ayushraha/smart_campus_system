@@ -83,11 +83,16 @@ const ResumeBuilder = () => {
       } else {
         const response = await axios.post('/api/resume', resumeData);
         toast.success('Resume created successfully');
-        navigate(`/student/resume/${response.data.resume._id}`);
+        const newResumeId = response.data.resume?._id || response.data._id;
+        if (newResumeId) {
+          navigate(`/student/resume/${newResumeId}`);
+        }
       }
       checkCompleteness();
     } catch (error) {
-      toast.error('Error saving resume');
+      console.error('Save error:', error);
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Error saving resume';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

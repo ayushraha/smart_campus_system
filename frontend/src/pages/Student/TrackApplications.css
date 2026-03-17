@@ -1,0 +1,462 @@
+/* frontend/src/pages/Student/TrackApplications.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+.ta-page {
+  font-family: 'Inter', sans-serif;
+  padding: 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.ta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.ta-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+.ta-subtitle { font-size: 14px; color: #475569; }
+.ta-header-actions { display: flex; gap: 10px; align-items: center; }
+
+.ta-view-toggle {
+  padding: 8px 16px;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 8px;
+  color: #a5b4fc;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s;
+}
+.ta-view-toggle:hover { background: rgba(99,102,241,0.2); }
+
+.ta-refresh-btn {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.2s;
+}
+.ta-refresh-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+.ta-spin { animation: taSpin 1s linear infinite; }
+@keyframes taSpin { to { transform: rotate(360deg); } }
+
+/* ── Summary Cards ───────────────────────────────────────────────── */
+.ta-summary {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.ta-summary-card {
+  flex: 1;
+  min-width: 90px;
+  background: rgba(255,255,255,0.03);
+  border: 1.5px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.ta-summary-card:hover {
+  border-color: var(--card-color, #6366f1);
+  background: rgba(99,102,241,0.06);
+  transform: translateY(-2px);
+}
+.ta-summary-card.active {
+  border-color: var(--card-color, #6366f1);
+  background: color-mix(in srgb, var(--card-color, #6366f1) 15%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--card-color, #6366f1) 20%, transparent);
+}
+.ta-summary-card.total { --card-color: #6366f1; }
+.ta-summary-icon { font-size: 18px; }
+.ta-summary-count { font-size: 22px; font-weight: 900; color: white; }
+.ta-summary-label { font-size: 11px; color: #475569; font-weight: 600; }
+
+/* ── Controls ────────────────────────────────────────────────────── */
+.ta-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.ta-search {
+  flex: 1;
+  position: relative;
+  min-width: 200px;
+}
+.ta-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #334155;
+}
+.ta-search input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  color: white;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.ta-search input::placeholder { color: #334155; }
+.ta-search input:focus { border-color: #6366f1; background: rgba(99,102,241,0.06); }
+.ta-filter-select {
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  cursor: pointer;
+}
+.ta-filter-select option { background: #0f1020; }
+
+/* ── Loading / Empty ─────────────────────────────────────────────── */
+.ta-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px;
+  color: #475569;
+  font-size: 14px;
+}
+.ta-loading-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid rgba(99,102,241,0.2);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: taSpin 0.8s linear infinite;
+}
+.ta-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px;
+  color: #334155;
+  text-align: center;
+}
+.ta-empty h3 { font-size: 17px; color: #475569; }
+.ta-empty p  { font-size: 13px; }
+
+/* ── Application Card ────────────────────────────────────────────── */
+.ta-list { display: flex; flex-direction: column; gap: 14px; }
+
+.ta-card {
+  background: rgba(15,15,35,0.7);
+  border: 1.5px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  overflow: hidden;
+  transition: all 0.25s;
+  animation: taFadeIn 0.4s ease both;
+}
+.ta-card:hover { border-color: rgba(99,102,241,0.3); box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+.ta-card.selected { border-color: rgba(16,185,129,0.3); }
+.ta-card.rejected { border-color: rgba(239,68,68,0.2); }
+
+@keyframes taFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ta-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px 10px;
+  cursor: pointer;
+  gap: 12px;
+}
+.ta-card-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.ta-company-badge {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  border: 1px solid;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ta-job-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ta-job-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.ta-job-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #475569;
+}
+.ta-card-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.ta-status-badge {
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+/* ── Pipeline ────────────────────────────────────────────────────── */
+.ta-pipeline {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px 14px;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.ta-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.ta-node-circle {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #334155;
+  font-weight: 800;
+  transition: all 0.3s;
+}
+.ta-node-label {
+  font-size: 10px;
+  color: #334155;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* States */
+.ta-node.done .ta-node-circle {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: #6366f1;
+  color: white;
+  font-size: 12px;
+}
+.ta-node.done .ta-node-label { color: #818cf8; }
+
+.ta-node.current .ta-node-circle {
+  background: rgba(99,102,241,0.15);
+  color: white;
+  font-size: 16px;
+  animation: taNodePulse 2s ease-in-out infinite;
+}
+.ta-node.current .ta-node-label { color: white; font-weight: 700; }
+
+.ta-node.rejected .ta-node-circle {
+  background: rgba(239,68,68,0.15);
+  border-color: #ef4444;
+  box-shadow: 0 0 12px rgba(239,68,68,0.3) !important;
+}
+.ta-node.rejected .ta-node-label { color: #fca5a5; }
+
+.ta-node.future .ta-node-circle { opacity: 0.3; }
+.ta-node.future .ta-node-label  { opacity: 0.3; }
+
+@keyframes taNodePulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.1); }
+}
+
+.ta-connector {
+  flex: 1;
+  min-width: 24px;
+  height: 2px;
+  background: rgba(255,255,255,0.06);
+  margin: 0 4px;
+  margin-bottom: 16px;
+  border-radius: 1px;
+  transition: background 0.3s;
+}
+.ta-connector.done { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+
+/* ── Expanded Detail ─────────────────────────────────────────────── */
+.ta-card-detail {
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 16px 20px;
+  animation: taFadeIn 0.3s ease both;
+}
+.ta-detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.ta-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 120px;
+}
+.ta-detail-item label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ta-detail-item span {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+.ta-detail-item.highlight span { color: #8b5cf6; font-weight: 700; }
+.ta-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #6366f1;
+  font-weight: 600;
+  text-decoration: none;
+}
+.ta-link:hover { color: #a5b4fc; }
+
+.ta-feedback {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.ta-feedback label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.ta-feedback p { font-size: 13px; color: #64748b; line-height: 1.6; }
+
+.ta-withdraw-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s;
+}
+.ta-withdraw-btn:hover { background: rgba(239,68,68,0.2); }
+
+.ta-congrats {
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #6ee7b7;
+  font-weight: 600;
+}
+
+/* ── Kanban View ─────────────────────────────────────────────────── */
+.ta-kanban {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 900px) { .ta-kanban { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .ta-kanban { grid-template-columns: 1fr; } }
+
+.ta-kanban-col {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.ta-kanban-col-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 2px solid;
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+.ta-kanban-count {
+  padding: 2px 9px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.ta-kanban-cards { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.ta-kanban-empty { font-size: 12px; color: #1e293b; text-align: center; padding: 16px; }
+
+.ta-kanban-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-left: 3px solid;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: transform 0.2s;
+}
+.ta-kanban-card:hover { transform: translateY(-2px); }
+.ta-kanban-job  { font-size: 13px; font-weight: 700; color: white; }
+.ta-kanban-company, .ta-kanban-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #475569;
+}
+
+@media (max-width: 600px) { .ta-page { padding: 16px; } }

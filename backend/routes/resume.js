@@ -26,14 +26,18 @@ const upload = multer({
 // Create new resume
 router.post('/', auth, async (req, res) => {
   try {
+    // Remove fields that shouldn't be set by client on create
+    const { _id, version, previousVersions, aiAnalysis, parsed, ...resumeBody } = req.body;
+    
     const resume = new Resume({
       userId: req.userId,
-      ...req.body
+      ...resumeBody
     });
 
     await resume.save();
     res.status(201).json({ message: 'Resume created successfully', resume });
   } catch (error) {
+    console.error('Error creating resume:', error);
     res.status(500).json({ message: 'Error creating resume', error: error.message });
   }
 });

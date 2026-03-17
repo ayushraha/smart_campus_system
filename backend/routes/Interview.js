@@ -17,7 +17,6 @@ router.post('/schedule', auth, checkRole('recruiter'), async (req, res) => {
       return res.status(404).json({ message: 'Application not found' });
     }
 
-    // Create interview
     const interview = new Interview({
       applicationId,
       studentId: application.studentId._id,
@@ -32,7 +31,6 @@ router.post('/schedule', auth, checkRole('recruiter'), async (req, res) => {
 
     await interview.save();
 
-    // Update application status
     application.status = 'interview';
     application.interviewDetails = {
       date: scheduledDate,
@@ -42,8 +40,8 @@ router.post('/schedule', auth, checkRole('recruiter'), async (req, res) => {
     };
     await application.save();
 
-    res.status(201).json({ 
-      message: 'Interview scheduled successfully', 
+    res.status(201).json({
+      message: 'Interview scheduled successfully',
       interview,
       roomLink: interview.meetingLink + interview.roomId
     });
@@ -52,34 +50,26 @@ router.post('/schedule', auth, checkRole('recruiter'), async (req, res) => {
   }
 });
 
-// Get interview details
-router.get('/:interviewId', auth, async (req, res) => {
+// Get my interviews — MUST come before /:interviewId (static before dynamic)
+router.get('/my/interviews', auth, async (req, res) => {
   try {
-    const interview = await Interview.findById(req.params.interviewId)
-      .populate('studentId', 'name email studentProfile')
-      .populate('recruiterId', 'name email recruiterProfile')
-      .populate('jobId', 'title company');
+    const filter = req.user.role === 'student'
+      ? { studentId: req.userId }
+      : { recruiterId: req.userId };
 
-    if (!interview) {
-      return res.status(404).json({ message: 'Interview not found' });
-    }
+    const interviews = await Interview.find(filter)
+      .populate('studentId', 'name email')
+      .populate('recruiterId', 'name email')
+      .populate('jobId', 'title company')
+      .sort({ scheduledDate: -1 });
 
-    // Check authorization
-    if (
-      interview.studentId._id.toString() !== req.userId.toString() &&
-      interview.recruiterId._id.toString() !== req.userId.toString() &&
-      req.user.role !== 'admin'
-    ) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    res.json(interview);
+    res.json(interviews);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching interview', error: error.message });
+    res.status(500).json({ message: 'Error fetching interviews', error: error.message });
   }
 });
 
-// Get interview by room ID
+// Get interview by room ID — MUST come before /:interviewId (static before dynamic)
 router.get('/room/:roomId', auth, async (req, res) => {
   try {
     const interview = await Interview.findOne({ roomId: req.params.roomId })
@@ -97,22 +87,40 @@ router.get('/room/:roomId', auth, async (req, res) => {
   }
 });
 
-// Start interview
-router.put('/:interviewId/start', auth, async (req, res) => {
+// Get interview details by ID (dynamic — must be after all static GET routes)
+router.get('/:interviewId', auth, async (req, res) => {
   try {
-    const interview = await Interview.findById(req.params.interviewId);
+    const interview = await Interview.findById(req.params.interviewId)
+      .populate('studentId', 'name email studentProfile')
+      .populate('recruiterId', 'name email recruiterProfile')
+      .populate('jobId', 'title company');
 
     if (!interview) {
       return res.status(404).json({ message: 'Interview not found' });
     }
 
-    interview.status = 'in-progress';
-    interview.recording = {
-      ...interview.recording,
-      startTime: new Date()
-    };
+    if (
+      interview.studentId._id.toString() !== req.userId.toString() &&
+      interview.recruiterId._id.toString() !== req.userId.toString() &&
+      req.user.role !== 'admin'
+    ) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
 
-    // Add participant
+    res.json(interview);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching interview', error: error.message });
+  }
+});
+
+// Start interview
+router.put('/:interviewId/start', auth, async (req, res) => {
+  try {
+    const interview = await Interview.findById(req.params.interviewId);
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
+
+    interview.status = 'in-progress';
+    interview.recording = { ...interview.recording, startTime: new Date() };
     interview.participantsJoined.push({
       userId: req.userId,
       joinedAt: new Date(),
@@ -120,113 +128,99 @@ router.put('/:interviewId/start', auth, async (req, res) => {
     });
 
     await interview.save();
-
     res.json({ message: 'Interview started', interview });
   } catch (error) {
     res.status(500).json({ message: 'Error starting interview', error: error.message });
   }
 });
 
-// End interview
+// End interview — preserves real live feedback scores, only fills text if nothing saved yet
 router.put('/:interviewId/end', auth, async (req, res) => {
   try {
     const interview = await Interview.findById(req.params.interviewId);
-
-    if (!interview) {
-      return res.status(404).json({ message: 'Interview not found' });
-    }
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
 
     interview.status = 'completed';
-    interview.recording = {
-      ...interview.recording,
-      endTime: new Date()
-    };
+    interview.recording = { ...interview.recording, endTime: new Date() };
 
-    // Update last participant left time
     const lastParticipant = interview.participantsJoined[interview.participantsJoined.length - 1];
-    if (lastParticipant) {
-      lastParticipant.leftAt = new Date();
-    }
+    if (lastParticipant) lastParticipant.leftAt = new Date();
 
-    // Auto-generate basic analysis
-    if (!interview.analysis || !interview.analysis.overallScore) {
-      const duration = interview.duration || 30;
-      const baseScore = 70 + Math.floor(Math.random() * 25); // 70-95
-      
+    // Only fill in default text summaries if analysis hasn't been set by recruiter
+    const a = interview.analysis || {};
+    const hasRealScores = a.overallScore !== undefined && a.overallScore !== null;
+
+    if (!hasRealScores) {
+      // No live feedback was given — leave analysis empty so recruiter can fill post-interview
       interview.analysis = {
-        overallScore: baseScore,
-        communicationScore: baseScore + Math.floor(Math.random() * 10) - 5,
-        technicalScore: baseScore + Math.floor(Math.random() * 10) - 5,
-        confidenceScore: baseScore + Math.floor(Math.random() * 10) - 5,
-        
-        sentimentAnalysis: {
-          positive: 0.6 + Math.random() * 0.3,
-          neutral: 0.2 + Math.random() * 0.2,
-          negative: 0.05 + Math.random() * 0.15
-        },
-        
-        keywordMatches: ['problem-solving', 'communication', 'teamwork'],
-        responseQuality: baseScore >= 85 ? 'excellent' : baseScore >= 75 ? 'good' : 'average',
-        
-        eyeContact: {
-          score: baseScore + Math.floor(Math.random() * 10) - 5,
-          feedback: 'Maintained good eye contact throughout the interview'
-        },
-        bodyLanguage: {
-          score: baseScore + Math.floor(Math.random() * 10) - 5,
-          feedback: 'Professional posture and gestures'
-        },
-        speakingPace: {
-          score: baseScore + Math.floor(Math.random() * 10) - 5,
-          feedback: 'Clear and well-paced communication'
-        },
-        
-        averageResponseTime: 5 + Math.floor(Math.random() * 10),
-        totalSpeakingTime: duration * 60 * 0.6,
-        fillerWordsCount: 5 + Math.floor(Math.random() * 15),
-        
-        strengths: [
-          'Good technical knowledge',
-          'Clear communication',
-          'Professional demeanor',
-          'Problem-solving ability'
-        ],
-        weaknesses: [
-          'Could provide more specific examples',
-          'Time management in responses'
-        ],
-        recommendations: [
-          'Practice STAR method for behavioral questions',
-          'Work on providing more detailed technical explanations'
-        ],
-        
-        aiSummary: 'The candidate demonstrated good understanding of the role requirements and communicated effectively throughout the interview.',
-        detailedFeedback: 'Overall, the candidate performed well. Technical responses showed depth of knowledge and practical understanding. Communication was clear and professional.'
+        overallScore: null,
+        communicationScore: null,
+        technicalScore: null,
+        confidenceScore: null,
+        aiSummary: '',
+        detailedFeedback: '',
+        strengths: [],
+        weaknesses: [],
+        recommendations: []
       };
+    } else {
+      // Real scores exist — just ensure text fields have defaults if missing
+      if (!a.aiSummary) {
+        interview.analysis.aiSummary = `Interview completed. Overall score: ${a.overallScore}/100.`;
+      }
     }
 
     await interview.save();
-
     res.json({ message: 'Interview ended', interview });
   } catch (error) {
     res.status(500).json({ message: 'Error ending interview', error: error.message });
   }
 });
 
-// Submit interview analysis (AI/Manual)
+// LIVE FEEDBACK — Recruiter saves scores & notes during the interview
+router.put('/:interviewId/live-feedback', auth, checkRole('recruiter'), async (req, res) => {
+  try {
+    const { technicalScore, communicationScore, confidenceScore, notes, strengths, weaknesses } = req.body;
+
+    const interview = await Interview.findById(req.params.interviewId);
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
+
+    // Compute overall as average of provided scores
+    const scores = [technicalScore, communicationScore, confidenceScore].filter(s => s !== undefined && s !== null);
+    const overallScore = scores.length > 0
+      ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+      : (interview.analysis?.overallScore || null);
+
+    const aObj = interview.analysis && typeof interview.analysis.toObject === 'function' ? interview.analysis.toObject() : (interview.analysis || {});
+
+    interview.analysis = {
+      ...aObj,
+      overallScore,
+      technicalScore: technicalScore !== undefined ? technicalScore : aObj.technicalScore,
+      communicationScore: communicationScore !== undefined ? communicationScore : aObj.communicationScore,
+      confidenceScore: confidenceScore !== undefined ? confidenceScore : aObj.confidenceScore,
+      strengths: strengths || aObj.strengths || [],
+      weaknesses: weaknesses || aObj.weaknesses || []
+    };
+
+    if (notes) interview.recruiterNotes = notes;
+
+    await interview.save();
+    res.json({ message: 'Live feedback saved', interview });
+  } catch (error) {
+    res.status(500).json({ message: 'Error saving live feedback', error: error.message });
+  }
+});
+
+// Submit interview analysis
 router.post('/:interviewId/analysis', auth, checkRole('recruiter', 'admin'), async (req, res) => {
   try {
     const { analysis } = req.body;
-    
     const interview = await Interview.findById(req.params.interviewId);
-
-    if (!interview) {
-      return res.status(404).json({ message: 'Interview not found' });
-    }
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
 
     interview.analysis = analysis;
     await interview.save();
-
     res.json({ message: 'Analysis saved successfully', interview });
   } catch (error) {
     res.status(500).json({ message: 'Error saving analysis', error: error.message });
@@ -237,21 +231,11 @@ router.post('/:interviewId/analysis', auth, checkRole('recruiter', 'admin'), asy
 router.post('/:interviewId/questions', auth, checkRole('recruiter'), async (req, res) => {
   try {
     const { question, category } = req.body;
-
     const interview = await Interview.findById(req.params.interviewId);
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
 
-    if (!interview) {
-      return res.status(404).json({ message: 'Interview not found' });
-    }
-
-    interview.questionsAsked.push({
-      question,
-      askedAt: new Date(),
-      category
-    });
-
+    interview.questionsAsked.push({ question, askedAt: new Date(), category });
     await interview.save();
-
     res.json({ message: 'Question added', interview });
   } catch (error) {
     res.status(500).json({ message: 'Error adding question', error: error.message });
@@ -262,24 +246,11 @@ router.post('/:interviewId/questions', auth, checkRole('recruiter'), async (req,
 router.post('/:interviewId/responses', auth, async (req, res) => {
   try {
     const { questionId, response, duration, sentiment, score } = req.body;
-
     const interview = await Interview.findById(req.params.interviewId);
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
 
-    if (!interview) {
-      return res.status(404).json({ message: 'Interview not found' });
-    }
-
-    interview.responses.push({
-      questionId,
-      response,
-      duration,
-      timestamp: new Date(),
-      sentiment,
-      score
-    });
-
+    interview.responses.push({ questionId, response, duration, timestamp: new Date(), sentiment, score });
     await interview.save();
-
     res.json({ message: 'Response recorded', interview });
   } catch (error) {
     res.status(500).json({ message: 'Error recording response', error: error.message });
@@ -290,17 +261,12 @@ router.post('/:interviewId/responses', auth, async (req, res) => {
 router.put('/:interviewId/notes', auth, checkRole('recruiter'), async (req, res) => {
   try {
     const { notes } = req.body;
-
     const interview = await Interview.findByIdAndUpdate(
       req.params.interviewId,
       { recruiterNotes: notes },
       { new: true }
     );
-
-    if (!interview) {
-      return res.status(404).json({ message: 'Interview not found' });
-    }
-
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
     res.json({ message: 'Notes saved', interview });
   } catch (error) {
     res.status(500).json({ message: 'Error saving notes', error: error.message });
@@ -311,18 +277,13 @@ router.put('/:interviewId/notes', auth, checkRole('recruiter'), async (req, res)
 router.put('/:interviewId/decision', auth, checkRole('recruiter'), async (req, res) => {
   try {
     const { result, finalFeedback, rating } = req.body;
-
     const interview = await Interview.findByIdAndUpdate(
       req.params.interviewId,
       { result, finalFeedback, rating },
       { new: true }
     );
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
 
-    if (!interview) {
-      return res.status(404).json({ message: 'Interview not found' });
-    }
-
-    // Update application status based on result
     await Application.findByIdAndUpdate(interview.applicationId, {
       status: result === 'selected' ? 'selected' : result === 'rejected' ? 'rejected' : 'interview',
       feedback: finalFeedback
@@ -334,91 +295,77 @@ router.put('/:interviewId/decision', auth, checkRole('recruiter'), async (req, r
   }
 });
 
-// Get my interviews (Student/Recruiter)
-router.get('/my/interviews', auth, async (req, res) => {
-  try {
-    const filter = req.user.role === 'student' 
-      ? { studentId: req.userId }
-      : { recruiterId: req.userId };
+// NOTE: /my/interviews route has been moved above /:interviewId — see line ~53
 
-    const interviews = await Interview.find(filter)
-      .populate('studentId', 'name email')
-      .populate('recruiterId', 'name email')
-      .populate('jobId', 'title company')
-      .sort({ scheduledDate: -1 });
-
-    res.json(interviews);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching interviews', error: error.message });
-  }
-});
-
-// Generate AI analysis (Mock implementation - integrate with actual AI service)
+// Generate descriptive AI analysis based on REAL stored scores
 router.post('/:interviewId/generate-analysis', auth, checkRole('recruiter', 'admin'), async (req, res) => {
   try {
     const interview = await Interview.findById(req.params.interviewId);
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
 
-    if (!interview) {
-      return res.status(404).json({ message: 'Interview not found' });
-    }
+    const a = interview.analysis && typeof interview.analysis.toObject === 'function' ? interview.analysis.toObject() : (interview.analysis || {});
+    const overall = a.overallScore ?? 0;
+    const comm = a.communicationScore ?? 0;
+    const tech = a.technicalScore ?? 0;
+    const conf = a.confidenceScore ?? 0;
 
-    // Mock AI Analysis - Replace with actual AI service integration
-    const aiAnalysis = {
-      overallScore: Math.floor(Math.random() * 30) + 70, // 70-100
-      communicationScore: Math.floor(Math.random() * 30) + 70,
-      technicalScore: Math.floor(Math.random() * 30) + 70,
-      confidenceScore: Math.floor(Math.random() * 30) + 70,
-      
+    // Derive text feedback from real scores
+    const quality = overall >= 85 ? 'excellent' : overall >= 70 ? 'good' : overall >= 55 ? 'average' : 'poor';
+    const commFeedback = comm >= 80 ? 'Communicated clearly and confidently.' : comm >= 60 ? 'Communication was adequate with minor gaps.' : 'Communication needs improvement.';
+    const techFeedback = tech >= 80 ? 'Demonstrated strong technical knowledge.' : tech >= 60 ? 'Showed basic technical understanding.' : 'Technical responses lacked depth.';
+    const confFeedback = conf >= 80 ? 'Presented ideas with confidence.' : conf >= 60 ? 'Moderate confidence — some hesitation noted.' : 'Appeared nervous during responses.';
+
+    const strengths = [];
+    const weaknesses = [];
+    const recommendations = [];
+
+    if (tech >= 75) strengths.push('Good technical knowledge');
+    else weaknesses.push('Technical skills need further development');
+
+    if (comm >= 75) strengths.push('Clear and professional communication');
+    else weaknesses.push('Communication could be more structured');
+
+    if (conf >= 75) strengths.push('Confident and assertive responses');
+    else weaknesses.push('Work on confidence and clarity under pressure');
+
+    if (interview.questionsAsked?.length > 0) strengths.push(`Engaged with ${interview.questionsAsked.length} questions`);
+
+    recommendations.push('Practice the STAR method for behavioral questions');
+    if (tech < 75) recommendations.push('Review core technical concepts for the role');
+    if (comm < 75) recommendations.push('Work on structuring responses concisely');
+    if (conf < 75) recommendations.push('Mock interview practice to build confidence');
+
+    const aiSummary = `The candidate scored ${overall}/100 overall. ${techFeedback} ${commFeedback} ${confFeedback}`;
+    const detailedFeedback = `Technical: ${tech}/100 — ${techFeedback} Communication: ${comm}/100 — ${commFeedback} Confidence: ${conf}/100 — ${confFeedback}`;
+
+    const updatedAnalysis = {
+      ...a,
+      responseQuality: quality,
       sentimentAnalysis: {
-        positive: Math.random() * 0.5 + 0.4, // 40-90%
-        neutral: Math.random() * 0.3,
-        negative: Math.random() * 0.2
+        positive: Math.min(overall / 100, 0.9),
+        neutral: 0.1 + (100 - overall) / 200,
+        negative: Math.max(0.02, (100 - overall) / 250)
       },
-      
-      keywordMatches: ['problem-solving', 'teamwork', 'leadership', 'communication'],
-      responseQuality: 'good',
-      
-      eyeContact: {
-        score: Math.floor(Math.random() * 20) + 75,
-        feedback: 'Maintained good eye contact throughout the interview'
-      },
-      bodyLanguage: {
-        score: Math.floor(Math.random() * 20) + 75,
-        feedback: 'Professional posture and gestures'
-      },
-      speakingPace: {
-        score: Math.floor(Math.random() * 20) + 75,
-        feedback: 'Clear and well-paced communication'
-      },
-      
-      averageResponseTime: Math.floor(Math.random() * 10) + 5,
-      totalSpeakingTime: interview.duration * 60 * 0.6, // 60% of total time
-      fillerWordsCount: Math.floor(Math.random() * 15) + 5,
-      
-      strengths: [
-        'Strong technical knowledge',
-        'Good communication skills',
-        'Problem-solving ability',
-        'Team collaboration'
-      ],
-      weaknesses: [
-        'Could provide more specific examples',
-        'Time management in responses'
-      ],
-      recommendations: [
-        'Practice STAR method for behavioral questions',
-        'Work on concise technical explanations'
-      ],
-      
-      aiSummary: 'The candidate demonstrated strong technical knowledge and good communication skills. They showed enthusiasm and preparedness for the role.',
-      detailedFeedback: 'Overall, the candidate performed well in the interview. Their technical responses were accurate and showed depth of understanding. Communication was clear and professional. There is room for improvement in providing more structured responses to behavioral questions.'
+      eyeContact: a.eyeContact || { score: conf, feedback: confFeedback },
+      bodyLanguage: a.bodyLanguage || { score: conf, feedback: confFeedback },
+      speakingPace: a.speakingPace || { score: comm, feedback: commFeedback },
+      keywordMatches: a.keywordMatches?.length ? a.keywordMatches : ['problem-solving', 'communication', 'teamwork'],
+      averageResponseTime: a.averageResponseTime || 8,
+      totalSpeakingTime: a.totalSpeakingTime || (interview.duration || 30) * 60 * 0.6,
+      fillerWordsCount: a.fillerWordsCount || 0,
+      strengths: a.strengths?.length ? a.strengths : strengths,
+      weaknesses: a.weaknesses?.length ? a.weaknesses : weaknesses,
+      recommendations,
+      aiSummary,
+      detailedFeedback
     };
 
-    interview.analysis = aiAnalysis;
+    interview.analysis = updatedAnalysis;
     await interview.save();
 
-    res.json({ message: 'AI analysis generated', analysis: aiAnalysis });
+    res.json({ message: 'AI analysis generated', analysis: updatedAnalysis });
   } catch (error) {
+    console.error('Error generating AI analysis:', error);
     res.status(500).json({ message: 'Error generating analysis', error: error.message });
   }
 });

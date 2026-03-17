@@ -8,10 +8,12 @@ import {
   FiUser,
   FiLogOut,
   FiPlusCircle,
-  FiVideo
+  FiVideo,
+  FiCalendar
 } from 'react-icons/fi';
 import '../Admin/Admin.css'; // Use Admin CSS as base
 import './Recruiter.css';
+import NotificationBell from '../../components/NotificationBell';
 
 import Overview from './Overview';
 import Jobs from './Jobs';
@@ -19,6 +21,7 @@ import Applications from './Applications';
 import Profile from './Profile';
 import CreateJob from './CreateJob';
 import Interviews from './Interviews';
+import CreateDriveEvent from './CreateDriveEvent';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -43,9 +46,12 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2>Recruiter Portal</h2>
-          <p>{user?.name}</p>
+        <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2>Recruiter Portal</h2>
+            <p>{user?.name}</p>
+          </div>
+          <NotificationBell />
         </div>
 
         <nav className="sidebar-nav">
@@ -91,6 +97,13 @@ const Dashboard = () => {
           >
             <FiUser /> Profile
           </Link>
+          <Link
+            to="/recruiter/drives/create"
+            className={activeTab === 'drives' ? 'active' : ''}
+            onClick={() => setActiveTab('drives')}
+          >
+            <FiCalendar /> Post Drive Event
+          </Link>
         </nav>
 
         <div className="sidebar-footer">
@@ -108,6 +121,7 @@ const Dashboard = () => {
           <Route path="/applications" element={<Applications />} />
           <Route path="/interviews" element={<Interviews />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/drives/create" element={<CreateDriveEvent />} />
         </Routes>
       </main>
     </div>

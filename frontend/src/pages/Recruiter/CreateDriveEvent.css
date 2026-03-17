@@ -1,0 +1,184 @@
+/* frontend/src/pages/Recruiter/CreateDriveEvent.css */
+
+.cde-page {
+  padding: 24px;
+  max-width: 860px;
+  margin: 0 auto;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.cde-header {
+  margin-bottom: 28px;
+}
+.cde-header h1 {
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 6px;
+}
+.cde-header p { color: #64748b; font-size: 14px; margin: 0; }
+
+/* ── Form ── */
+.cde-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cde-section {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.07);
+  border: 1px solid #ede9fe;
+}
+
+.cde-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4338ca;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Event type cards */
+.cde-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 640px) { .cde-type-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.cde-type-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fafbff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cde-type-card:hover { border-color: #a5b4fc; background: #f5f3ff; }
+.cde-type-card.selected {
+  border-color: #6366f1;
+  background: linear-gradient(135deg, #eff0ff, #f5f3ff);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+.cde-type-label { font-size: 13px; font-weight: 700; color: #1e293b; }
+.cde-type-desc  { font-size: 11px; color: #94a3b8; }
+
+/* Fields */
+.cde-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) { .cde-row { grid-template-columns: 1fr; } }
+
+.cde-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cde-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cde-input {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.cde-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+.cde-textarea { resize: vertical; min-height: 90px; }
+
+/* Department chips */
+.cde-dept-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cde-dept-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.cde-dept-chip input[type="checkbox"] { display: none; }
+.cde-dept-chip:hover { border-color: #a5b4fc; color: #4338ca; background: #eff0ff; }
+.cde-dept-chip.selected {
+  background: linear-gradient(135deg, #eff0ff, #f5f3ff);
+  border-color: #6366f1;
+  color: #4338ca;
+}
+
+/* Submit */
+.cde-submit-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 16px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+}
+.cde-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.45);
+}
+.cde-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.cde-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

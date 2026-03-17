@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import { Zap } from 'lucide-react';
+import { Zap, Award } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -15,6 +15,12 @@ import InterviewAnalysis from './pages/Interview/InterviewAnalysis';
 import './App.css';
 import AIChat from './pages/Student/AIChat';
 import PremiumResumeParser from "./pages/Student/PremiumResumeParser";
+import MentorshipHub from './pages/Student/MentorshipHub'; // ✅ NEW IMPORT
+import BecameMentor from './pages/Student/BecameMentor';
+import DriveCalendar from './pages/Student/DriveCalendar';
+import StudyGroups from './pages/Student/StudyGroups';
+import LandingPage from './pages/LandingPage';
+import TrackApplications from './pages/Student/TrackApplications';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -137,7 +143,10 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
-            {/* Public Routes */}
+            {/* Landing Page - root route */}
+            <Route path="/" element={<LandingPage />} />
+
+            {/* Auth Routes */}
             <Route 
               path="/login" 
               element={
@@ -213,6 +222,55 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+
+            {/* ✅ MENTORSHIP HUB ROUTES (NEW) */}
+            <Route 
+              path="/student/mentorship" 
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <MentorshipHub />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/student/become-mentor" 
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <BecameMentor />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Drive Calendar Route */}
+            <Route 
+              path="/student/calendar" 
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <DriveCalendar />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Study Groups Route */}
+            <Route 
+              path="/student/study-groups" 
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudyGroups />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Track Applications Route */}
+            <Route 
+              path="/student/track-applications" 
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <TrackApplications />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Role-based Dashboards */}
             <Route 
@@ -244,7 +302,6 @@ function App() {
             
             {/* Special Pages */}
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
           
@@ -269,7 +326,8 @@ function App() {
 
 export default App;
 
-// Navigation Component for Student Sidebar/Menu
+// Navigation Components for Student Sidebar/Menu
+
 export const PremiumResumeParserNav = () => {
   return (
     <NavLink 
@@ -278,6 +336,32 @@ export const PremiumResumeParserNav = () => {
     >
       <Zap size={20} />
       <span>Premium Resume Parser</span>
+    </NavLink>
+  );
+};
+
+// ✅ NEW NAVIGATION COMPONENT FOR MENTORSHIP HUB
+export const MentorshipHubNav = () => {
+  return (
+    <NavLink 
+      to="/student/mentorship"
+      className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+    >
+      <Award size={20} />
+      <span>Mentorship Hub</span>
+    </NavLink>
+  );
+};
+
+// ✅ NEW NAVIGATION COMPONENT FOR BECOME MENTOR
+export const BecomeMentorNav = () => {
+  return (
+    <NavLink 
+      to="/student/become-mentor"
+      className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+    >
+      <Award size={20} />
+      <span>Become a Mentor</span>
     </NavLink>
   );
 };

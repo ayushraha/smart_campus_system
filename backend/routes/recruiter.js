@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const DriveEvent = require('../models/DriveEvent');
 const { auth, checkRole, checkApproved } = require('../middleware/auth');
 
 // All recruiter routes require authentication and recruiter role
@@ -39,6 +40,11 @@ router.get('/dashboard/stats', checkApproved, async (req, res) => {
       jobId: { $in: jobIds },
       status: 'selected' 
     });
+    const activeEvents = await DriveEvent.countDocuments({ 
+      recruiterId: req.userId,
+      eventDate: { $gte: new Date() },
+      status: 'upcoming'
+    });
 
     res.json({
       totalJobs,
@@ -47,7 +53,8 @@ router.get('/dashboard/stats', checkApproved, async (req, res) => {
       totalApplications,
       pendingApplications,
       shortlisted,
-      selected
+      selected,
+      activeEvents 
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching stats', error: error.message });

@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const DriveEvent = require('../models/DriveEvent');
 const { auth, checkRole, checkApproved } = require('../middleware/auth');
 
 // All student routes require authentication and student role
@@ -182,17 +183,16 @@ router.get('/dashboard/stats', checkApproved, async (req, res) => {
       studentId: req.userId, 
       status: 'selected' 
     });
-    const availableJobs = await Job.countDocuments({ 
-      status: 'active', 
-      isApproved: true 
-    });
+    const availableJobs = await Job.countDocuments({ status: 'active', isApproved: true });
+    const upcomingDrives = await DriveEvent.countDocuments({ eventDate: { $gte: new Date() }, status: 'upcoming' });
 
     res.json({
       totalApplications,
       pendingApplications,
       shortlisted,
       selected,
-      availableJobs
+      availableJobs,
+      upcomingDrives
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching stats', error: error.message });

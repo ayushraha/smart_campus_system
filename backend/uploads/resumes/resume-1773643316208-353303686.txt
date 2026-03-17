@@ -1,0 +1,68 @@
+Aayush Rahangdale
+Full Stack MERN Developer
+
+ +91-8552877591
+
+# aayushrahangdale727@gmail.com § github.com/ayushraha ï linkedin.com/in/aayush rahangdale
+
+Professional Summary
+Results-driven Full-Stack MERN Developer with hands-on experience in building scalable real-time web
+applications. Strong expertise in React.js, Node.js, MongoDB, JWT authentication, and REST API development.
+Proven ability to design secure backend systems with role-based access control.
+
+Education
+Bachelor of Engineering in Computer Engineering
+Savitribai Phule Pune University (SPPU)
+
+2022-2026
+CGPA: 9.39
+
+Technical Skills
+Programming Languages: HTML5, CSS3, C++
+Libraries / Frameworks: React, JavaScript, DOM Manipulation
+Tools / Platforms: Git, GitHub, VS Code, Postman
+Databases: SQL, MongoDB
+
+Experience
+Software Developer Intern
+
+June 2024 – Present
+
+Avin Systems
+
+– Worked on Bootloader software development for embedded systems, focusing on firmware update mechanisms and
+memory management.
+– Contributed to vECU (Virtual Electronic Control Unit) development and backend logic for plant model simulations.
+– Developed and integrated backend modules to manage system variables, model configurations, and data communication.
+
+Full Stack Development Intern
+Bharat Intern
+
+– Developed responsive full-stack web applications using the MERN stack.
+– Implemented secure authentication systems using JWT and middleware.
+– Optimized backend APIs to improve response time and scalability.
+
+Projects
+CivicSense – AI Civic Issue Reporting System | React, Node.js, MongoDB
+
+– Developed a real-time issue reporting platform with role-based dashboards.
+– Integrated AI-based complaint classification and implemented secure JWT authentication.
+– Built REST APIs and real-time notifications using Socket.io.
+CAMPUS – AI Powered Placement System | MERN + LLM
+
+– Built a role-based recruitment portal with resume upload and job management modules.
+– Integrated LLM for resume analysis and intelligent candidate-job matching.
+– Implemented JWT-based authentication and protected backend APIs.
+Voting Application Backend | Node.js, Express.js, MongoDB
+
+– Developed secure RESTful APIs with JWT authentication and bcrypt hashing.
+– Enforced one-user-one-vote logic using MVC architecture and request validation.
+
+Achievements
+• Solved DSA problems (LinkedIn documented)
+• Built 5+ full-stack production-ready applications.
+
+Jan 2024 – Feb 2024
+Remote
+
+

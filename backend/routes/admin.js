@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const DriveEvent = require('../models/DriveEvent');
 const { auth, checkRole } = require('../middleware/auth');
 
 // All admin routes require authentication and admin role
@@ -21,6 +22,7 @@ router.get('/dashboard/stats', async (req, res) => {
       isApproved: false 
     });
     const pendingJobs = await Job.countDocuments({ isApproved: false });
+    const upcomingDrives = await DriveEvent.countDocuments({ eventDate: { $gte: new Date() }, status: 'upcoming' });
 
     res.json({
       totalStudents,
@@ -29,7 +31,8 @@ router.get('/dashboard/stats', async (req, res) => {
       activeJobs,
       totalApplications,
       pendingApprovals,
-      pendingJobs
+      pendingJobs,
+      upcomingDrives
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching stats', error: error.message });

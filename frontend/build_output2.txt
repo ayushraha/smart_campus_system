@@ -1,0 +1,30 @@
+
+> smart-campus-recruitment-frontend@0.1.0 build
+> react-scripts build
+
+
+<--- Last few GCs --->
+
+[10704:00000253BF0E7000]     1527 ms: Scavenge (interleaved) 40.1 (57.5) -> 34.8 (60.5) MB, pooled: 0 MB, 4.03 / 0.00 ms  (average mu = 0.996, current mu = 0.996) allocation failure; 
+[10704:00000253BF0E7000]     2697 ms: Scavenge (interleaved) 43.4 (61.0) -> 36.9 (101.5) MB, pooled: 0 MB, 1010.93 / 0.00 ms  (average mu = 0.996, current mu = 0.996) allocation failure; 
+
+FATAL ERROR: AlignedAlloc Allocation failed - process out of memory
+----- Native stack trace -----
+
+ 1: 00007FF70221D879 node::OnFatalError+1193
+ 2: 00007FF702E4BF27 v8::Function::NewInstance+423
+ 3: 00007FF7027CC06E v8::internal::Version::GetSONAME+11006
+ 4: 00007FF7029452AB v8::MemorySpan<v8::internal::DirectHandle<v8::internal::Map> >::operator[]+81819
+ 5: 00007FF70294329C v8::MemorySpan<v8::internal::DirectHandle<v8::internal::Map> >::operator[]+73612
+ 6: 00007FF702C88C17 uv_timer_set_repeat+111767
+ 7: 00007FF702E42521 X509_STORE_set_get_issuer+735505
+ 8: 00007FF702E431CB X509_STORE_set_get_issuer+738747
+ 9: 00007FF7028F53DE EC_KEY_METHOD_set_verify+218206
+10: 00007FF7028F4B1A EC_KEY_METHOD_set_verify+215962
+11: 00007FF7028F0189 EC_KEY_METHOD_set_verify+197129
+12: 00007FF702DC993F X509_STORE_set_get_issuer+240943
+13: 00007FF702DCC731 X509_STORE_set_get_issuer+252705
+14: 00007FF702E553C3 v8::ScriptCompiler::CompileFunction+1011
+15: 00007FF702239203 node::GetCurrentEnvironment+19587
+16: 00007FF7022377A1 node::GetCurrentEnvironment+12833
+17: 00000253E6F8F77E 

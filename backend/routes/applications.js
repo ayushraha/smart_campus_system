@@ -1,21 +1,26 @@
+// backend/routes/applications.js
 const express = require('express');
 const router = express.Router();
 const Application = require('../models/Application');
-const { auth } = require('../middleware/auth');
+const Job = require('../models/Job');
+const { auth, checkRole, checkApproved } = require('../middleware/auth');
 
-// Get application by ID (authenticated users only)
-router.get('/:applicationId', auth, async (req, res) => {
+// GET: application by ID (any authenticated user with permission)
+router.get('/:applicationId', auth, checkApproved, async (req, res) => {
   try {
     const application = await Application.findById(req.params.applicationId)
-      .populate('jobId', 'title company location')
+      .populate('jobId', 'title company location salary jobType')
       .populate('studentId', 'name email');
 
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
 
-    // Check if user has permission to view
-    if (req.user.role === 'student' && application.studentId._id.toString() !== req.userId.toString()) {
+    // Students can only view their own; recruiters/admins can view any
+    if (
+      req.user.role === 'student' &&
+      application.studentId._id.toString() !== req.userId.toString()
+    ) {
       return res.status(403).json({ message: 'Access denied' });
     }
 

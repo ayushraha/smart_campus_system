@@ -1,0 +1,485 @@
+/* frontend/src/pages/Student/DriveCalendar.css */
+
+/* ── Root ──────────────────────────────────────────────────────────── */
+.drive-calendar-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0f4ff 0%, #faf8ff 50%, #f0fff4 100%);
+  padding: 24px;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* ── Page Header ───────────────────────────────────────────────────── */
+.dc-header {
+  margin-bottom: 24px;
+}
+
+.dc-header h1 {
+  font-size: 26px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 4px 0;
+}
+
+.dc-header p {
+  color: #64748b;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ── Company Subscribe Bar ─────────────────────────────────────────── */
+.dc-subscribe-bar {
+  background: white;
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.08);
+  border: 1px solid #e8e6ff;
+}
+
+.dc-subscribe-bar h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dc-subscribe-input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.dc-sub-input {
+  flex: 1;
+  min-width: 200px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 13px;
+  color: #374151;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.dc-sub-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+
+.dc-sub-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.dc-sub-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35); }
+.dc-sub-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.dc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dc-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #eff6ff, #f0f0ff);
+  border: 1px solid #c7d2fe;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4338ca;
+}
+
+.dc-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.dc-chip-remove:hover { color: #dc2626; }
+
+/* ── Main Layout ───────────────────────────────────────────────────── */
+.dc-body {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .dc-body { grid-template-columns: 1fr; }
+}
+
+/* ── Calendar Card ─────────────────────────────────────────────────── */
+.dc-calendar-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
+  overflow: hidden;
+}
+
+/* Nav */
+.dc-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+.dc-cal-nav h2 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.dc-nav-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+.dc-nav-btn:hover { background: rgba(255, 255, 255, 0.35); }
+
+/* Legend */
+.dc-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  background: #faf9ff;
+  border-bottom: 1px solid #ede9fe;
+}
+
+.dc-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.dc-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot-drive { background: #3b82f6; }
+.dot-interview { background: #8b5cf6; }
+.dot-deadline { background: #ef4444; }
+.dot-info-session { background: #10b981; }
+.dot-workshop { background: #f59e0b; }
+.dot-ppt { background: #06b6d4; }
+
+/* Day-of-week headers */
+.dc-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f8faff;
+  border-bottom: 1px solid #ede9fe;
+}
+
+.dc-weekday {
+  text-align: center;
+  padding: 10px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Grid */
+.dc-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+
+.dc-day {
+  border: 1px solid #f1f5f9;
+  min-height: 80px;
+  padding: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  position: relative;
+}
+
+.dc-day:hover { background: #f8f5ff; }
+.dc-day.empty { background: #fafafa; cursor: default; }
+.dc-day.today { background: linear-gradient(135deg, #f0edff, #e8f4ff); }
+.dc-day.selected { background: #ede9fe; border-color: #8b5cf6; }
+.dc-day.has-events { border-left: 3px solid #6366f1; }
+
+.dc-day-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.dc-day.today .dc-day-num {
+  color: white;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.dc-day.empty .dc-day-num { color: #d1d5db; }
+
+.dc-event-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.dc-event-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.dc-more-text {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+/* ── Right Panel ───────────────────────────────────────────────────── */
+.dc-side-panel {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
+  overflow: hidden;
+  position: sticky;
+  top: 24px;
+}
+
+.dc-side-header {
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+.dc-side-header h3 {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 2px 0;
+}
+
+.dc-side-header p { font-size: 12px; opacity: 0.8; margin: 0; }
+
+.dc-side-events {
+  padding: 16px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.dc-side-events::-webkit-scrollbar { width: 4px; }
+.dc-side-events::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 4px; }
+
+.dc-no-events {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.dc-no-events span { font-size: 36px; }
+.dc-no-events p { font-weight: 600; color: #64748b; margin: 0; }
+.dc-no-events small { font-size: 12px; }
+
+/* Event Card */
+.dc-event-card {
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border-left: 4px solid;
+  background: #fafbff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: default;
+}
+
+.dc-event-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+.dc-event-card.type-placement-drive { border-color: #3b82f6; background: #eff8ff; }
+.dc-event-card.type-interview { border-color: #8b5cf6; background: #faf5ff; }
+.dc-event-card.type-deadline { border-color: #ef4444; background: #fff5f5; }
+.dc-event-card.type-info-session { border-color: #10b981; background: #f0fdf8; }
+.dc-event-card.type-workshop { border-color: #f59e0b; background: #fffbeb; }
+.dc-event-card.type-ppt { border-color: #06b6d4; background: #ecfeff; }
+
+.dc-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dc-company-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.dc-card-info { flex: 1; }
+
+.dc-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 3px;
+}
+
+.dc-card-company {
+  font-size: 12px;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.dc-type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  text-transform: capitalize;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.badge-placement-drive { background: #dbeafe; color: #1d4ed8; }
+.badge-interview { background: #ede9fe; color: #6d28d9; }
+.badge-deadline { background: #fee2e2; color: #b91c1c; }
+.badge-info-session { background: #dcfce7; color: #166534; }
+.badge-workshop { background: #fef3c7; color: #b45309; }
+.badge-ppt { background: #cffafe; color: #0e7490; }
+
+.dc-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #475569;
+  margin-bottom: 10px;
+}
+
+.dc-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dc-card-eligibility {
+  font-size: 11px;
+  color: #6b7280;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin-bottom: 10px;
+}
+
+.dc-register-btn {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.dc-register-btn.register {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+.dc-register-btn.register:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+
+.dc-register-btn.registered {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.dc-register-btn.cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+  cursor: not-allowed;
+}
+
+.dc-register-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Loading ───────────────────────────────────────────────────────── */
+.dc-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+  color: #6366f1;
+}
+
+.dc-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e8e6ff;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

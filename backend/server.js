@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
+
 dotenv.config();
 
 const app = express();
@@ -68,6 +69,13 @@ const interviewRoutes = require('./routes/Interview');
 const resumeRoutes = require('./routes/resume');
 const aiChatRoutes = require('./routes/aiChat');
 const resumeParserRoutes = require('./routes/resumeParser');
+const studentProfileRoutes = require('./routes/studentProfile');
+const mentorRoutes = require('./routes/mentor');
+const mentorMessageRoutes = require('./routes/mentorMessages');
+const driveEventRoutes = require('./routes/driveEvents');
+const notificationRoutes = require('./routes/notifications');
+const studyGroupRoutes = require('./routes/studyGroups');
+
 
 // ✅ Register Routes
 app.use('/api/auth', authRoutes);
@@ -80,6 +88,12 @@ app.use('/api/interview', interviewRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
 app.use('/api/resume-parser', resumeParserRoutes);
+app.use('/api/student-profile', studentProfileRoutes);
+app.use('/api/mentor', mentorRoutes);
+app.use('/api/mentor-messages', mentorMessageRoutes);
+app.use('/api/drive-events', driveEventRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/study-groups', studyGroupRoutes);
 
 // ✅ Health check endpoint
 app.get('/health', (req, res) => {

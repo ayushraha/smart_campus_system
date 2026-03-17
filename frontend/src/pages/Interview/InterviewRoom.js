@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhoneOff, FiFileText
+import {
+  FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhoneOff, FiFileText, FiStar, FiSave
 } from 'react-icons/fi';
 import './Interview.css';
 
@@ -12,38 +12,95 @@ const InterviewRoom = () => {
   const { roomId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const [interview, setInterview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inCall, setInCall] = useState(false);
-  
+
   // Media controls
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [streamReady, setStreamReady] = useState(false);
-  
+
   // Interview state
   const [notes, setNotes] = useState('');
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [questionCategory, setQuestionCategory] = useState('technical');
-  
+  const [activeTab, setActiveTab] = useState('questions');
+
+  // Live feedback scores (recruiter)
+  const [liveScores, setLiveScores] = useState({
+    technicalScore: 70,
+    communicationScore: 70,
+    confidenceScore: 70
+  });
+  const [savingFeedback, setSavingFeedback] = useState(false);
+
   // Recording
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  
-  const localVideoRef = useRef(null);
+
+  // Two separate video refs to avoid black screen bug
+  const lobbyVideoRef = useRef(null);
+  const roomVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
+  const autoSaveTimerRef = useRef(null);
+
+  const fetchInterviewDetails = useCallback(async () => {
+    try {
+      const response = await axios.get(`/api/interview/room/${roomId}`);
+      setInterview(response.data);
+      setQuestions(response.data.questionsAsked || []);
+
+      // Pre-fill live scores from any previously saved analysis
+      if (response.data.analysis) {
+        const a = response.data.analysis;
+        setLiveScores({
+          technicalScore: a.technicalScore ?? 70,
+          communicationScore: a.communicationScore ?? 70,
+          confidenceScore: a.confidenceScore ?? 70
+        });
+      }
+
+      setLoading(false);
+    } catch (error) {
+      toast.error('Interview room not found');
+      navigate('/');
+      setLoading(false);
+    }
+  }, [roomId, navigate]);
 
   useEffect(() => {
     fetchInterviewDetails();
     return () => {
-      // Cleanup: stop all media tracks when component unmounts
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop());
       }
+      if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
     };
-  }, [roomId]);
+  }, [fetchInterviewDetails]);
+
+  // Reassign stream to in-room video element once inCall becomes true
+  useEffect(() => {
+    if (inCall && roomVideoRef.current && mediaStreamRef.current) {
+      roomVideoRef.current.srcObject = mediaStreamRef.current;
+      roomVideoRef.current.play().catch(err => console.warn('Room video play error:', err));
+    }
+  }, [inCall]);
+
+  // Auto-save live feedback every 30s during interview (recruiter only)
+  useEffect(() => {
+    if (inCall && user?.role === 'recruiter' && interview) {
+      autoSaveTimerRef.current = setInterval(() => {
+        saveLiveFeedback(true); // silent save
+      }, 30000);
+    }
+    return () => {
+      if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inCall, interview]);
 
   useEffect(() => {
     let interval;
@@ -55,80 +112,46 @@ const InterviewRoom = () => {
     return () => clearInterval(interval);
   }, [isRecording]);
 
-  const fetchInterviewDetails = async () => {
-    try {
-      const response = await axios.get(`/api/interview/room/${roomId}`);
-      setInterview(response.data);
-      setQuestions(response.data.questionsAsked || []);
-      setLoading(false);
-    } catch (error) {
-      toast.error('Interview room not found');
-      navigate('/');
-      setLoading(false);
-    }
-  };
-
   const startLocalStream = async () => {
     try {
       console.log('Requesting camera and microphone access...');
-      
+
       const constraints = {
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true
-        }
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: { echoCancellation: true, noiseSuppression: true }
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log('Media stream obtained:', stream);
-      
       mediaStreamRef.current = stream;
-      
-      // Set video element source
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-        
-        // Ensure video plays
-        localVideoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded');
-          localVideoRef.current.play()
-            .then(() => {
-              console.log('Video playing successfully');
-              setStreamReady(true);
-            })
-            .catch(err => console.error('Error playing video:', err));
-        };
+
+      // Assign to lobby preview
+      if (lobbyVideoRef.current) {
+        lobbyVideoRef.current.srcObject = stream;
+        await lobbyVideoRef.current.play().catch(err => console.warn('Lobby play error:', err));
+        setStreamReady(true);
       }
-      
+
       return stream;
     } catch (error) {
       console.error('Error accessing media devices:', error);
-      
       if (error.name === 'NotAllowedError') {
-        toast.error('Camera/microphone access denied. Please allow permissions.');
+        toast.error('Camera/microphone access denied. Please allow permissions in your browser.');
       } else if (error.name === 'NotFoundError') {
         toast.error('No camera or microphone found.');
       } else {
         toast.error('Could not access camera/microphone: ' + error.message);
       }
-      
       return null;
     }
   };
 
   const joinInterview = async () => {
     try {
-      const stream = await startLocalStream();
-      
+      const stream = mediaStreamRef.current || await startLocalStream();
       if (!stream) {
         toast.error('Cannot join without camera/microphone access');
         return;
       }
-
       await axios.put(`/api/interview/${interview._id}/start`);
       setInCall(true);
       setIsRecording(true);
@@ -141,21 +164,18 @@ const InterviewRoom = () => {
 
   const leaveInterview = async () => {
     try {
-      // Stop all tracks
       if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => {
-          track.stop();
-          console.log('Stopped track:', track.kind);
-        });
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
       }
-      
+      // Save live feedback before leaving (recruiter)
+      if (user?.role === 'recruiter') {
+        await saveLiveFeedback(true);
+      }
       await axios.put(`/api/interview/${interview._id}/end`);
       setInCall(false);
       setIsRecording(false);
-      
       toast.success('Interview ended');
-      
-      // Navigate based on role
+
       if (user.role === 'recruiter') {
         navigate(`/recruiter/interviews/${interview._id}/analysis`);
       } else {
@@ -164,6 +184,22 @@ const InterviewRoom = () => {
     } catch (error) {
       console.error('Error leaving interview:', error);
       toast.error('Error leaving interview');
+    }
+  };
+
+  const saveLiveFeedback = async (silent = false) => {
+    if (!interview) return;
+    setSavingFeedback(true);
+    try {
+      await axios.put(`/api/interview/${interview._id}/live-feedback`, {
+        ...liveScores,
+        notes
+      });
+      if (!silent) toast.success('Feedback scores saved!');
+    } catch (error) {
+      if (!silent) toast.error('Failed to save feedback');
+    } finally {
+      setSavingFeedback(false);
     }
   };
 
@@ -194,24 +230,20 @@ const InterviewRoom = () => {
       toast.warning('Please enter a question');
       return;
     }
-
     try {
       await axios.post(`/api/interview/${interview._id}/questions`, {
         question: currentQuestion,
         category: questionCategory
       });
-
       const newQuestion = {
         question: currentQuestion,
         askedAt: new Date(),
         category: questionCategory
       };
-
       setQuestions([...questions, newQuestion]);
       setCurrentQuestion('');
       toast.success('Question added');
     } catch (error) {
-      console.error('Failed to add question:', error);
       toast.error('Failed to add question');
     }
   };
@@ -221,12 +253,10 @@ const InterviewRoom = () => {
       toast.warning('No notes to save');
       return;
     }
-
     try {
       await axios.put(`/api/interview/${interview._id}/notes`, { notes });
       toast.success('Notes saved');
     } catch (error) {
-      console.error('Failed to save notes:', error);
       toast.error('Failed to save notes');
     }
   };
@@ -237,6 +267,27 @@ const InterviewRoom = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const ScoreSlider = ({ label, field, emoji }) => (
+    <div className="score-slider-group">
+      <div className="slider-header">
+        <span className="slider-label">{emoji} {label}</span>
+        <span className="slider-value">{liveScores[field]}<small>/100</small></span>
+      </div>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        step="5"
+        value={liveScores[field]}
+        onChange={(e) => setLiveScores(prev => ({ ...prev, [field]: Number(e.target.value) }))}
+        className={`score-range ${liveScores[field] >= 80 ? 'range-high' : liveScores[field] >= 60 ? 'range-mid' : 'range-low'}`}
+      />
+      <div className="slider-ticks">
+        <span>Poor</span><span>Good</span><span>Excellent</span>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return <div className="loading">Loading interview room...</div>;
   }
@@ -245,76 +296,130 @@ const InterviewRoom = () => {
     return <div className="loading">Interview not found</div>;
   }
 
+  // ──────────── LOBBY ────────────
   if (!inCall) {
     return (
       <div className="interview-lobby">
         <div className="lobby-container">
-          <h2>Interview Room</h2>
+          <div className="lobby-header">
+            <span className="lobby-icon">🎙️</span>
+            <h2>Interview Room</h2>
+            <p className="lobby-subtitle">Check your camera and microphone before joining</p>
+          </div>
+
           <div className="interview-details">
-            <p><strong>Position:</strong> {interview?.jobId?.title}</p>
-            <p><strong>Company:</strong> {interview?.jobId?.company}</p>
-            <p><strong>Date:</strong> {new Date(interview?.scheduledDate).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> {interview?.scheduledTime}</p>
+            <div className="detail-row">
+              <span className="detail-icon">💼</span>
+              <div>
+                <span className="detail-label">Position</span>
+                <strong>{interview?.jobId?.title}</strong>
+              </div>
+            </div>
+            <div className="detail-row">
+              <span className="detail-icon">🏢</span>
+              <div>
+                <span className="detail-label">Company</span>
+                <strong>{interview?.jobId?.company}</strong>
+              </div>
+            </div>
+            <div className="detail-row">
+              <span className="detail-icon">📅</span>
+              <div>
+                <span className="detail-label">Date & Time</span>
+                <strong>{new Date(interview?.scheduledDate).toLocaleDateString()} at {interview?.scheduledTime}</strong>
+              </div>
+            </div>
             {user.role === 'student' && (
-              <>
-                <p><strong>Interviewer:</strong> {interview?.recruiterId?.name}</p>
-              </>
+              <div className="detail-row">
+                <span className="detail-icon">👤</span>
+                <div>
+                  <span className="detail-label">Interviewer</span>
+                  <strong>{interview?.recruiterId?.name}</strong>
+                </div>
+              </div>
             )}
             {user.role === 'recruiter' && (
-              <>
-                <p><strong>Candidate:</strong> {interview?.studentId?.name}</p>
-              </>
+              <div className="detail-row">
+                <span className="detail-icon">🎓</span>
+                <div>
+                  <span className="detail-label">Candidate</span>
+                  <strong>{interview?.studentId?.name}</strong>
+                </div>
+              </div>
             )}
           </div>
 
           <div className="video-preview">
-            <video 
-              ref={localVideoRef} 
-              autoPlay 
-              muted 
+            {/* Lobby video ref */}
+            <video
+              ref={lobbyVideoRef}
+              autoPlay
+              muted
               playsInline
               className="preview-video"
               style={{ transform: 'scaleX(-1)' }}
             />
-            <p>Check your camera and microphone</p>
             {!streamReady && (
-              <button 
-                onClick={startLocalStream} 
-                className="btn-test-devices"
-              >
-                Test Camera & Microphone
-              </button>
+              <div className="preview-placeholder">
+                <div className="camera-icon">📷</div>
+                <p>Camera preview will appear here</p>
+              </div>
             )}
           </div>
 
-          <button 
-            onClick={joinInterview} 
+          <div className="lobby-actions">
+            {!streamReady && (
+              <button onClick={startLocalStream} className="btn-test-devices">
+                🎬 Test Camera & Microphone
+              </button>
+            )}
+            {streamReady && (
+              <div className="device-ready">
+                <span className="ready-dot"></span> Camera & Microphone Ready
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={joinInterview}
             className="btn-join"
             disabled={!streamReady}
           >
-            {streamReady ? 'Join Interview' : 'Testing devices...'}
+            {streamReady ? '✅ Join Interview' : '⏳ Test devices first...'}
           </button>
         </div>
       </div>
     );
   }
 
+  // ──────────── IN CALL ────────────
   return (
     <div className="interview-room">
       <div className="video-container">
         <div className="main-video">
-          <video 
-            ref={localVideoRef} 
-            autoPlay 
-            muted 
+          {/* Room video ref — separate from lobby to prevent black screen */}
+          <video
+            ref={roomVideoRef}
+            autoPlay
+            muted
             playsInline
             className="local-video-main"
             style={{ transform: 'scaleX(-1)' }}
           />
+
+          {isVideoOff && (
+            <div className="video-off-overlay">
+              <div className="avatar-placeholder">
+                {user?.name?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+              <p>Camera Off</p>
+            </div>
+          )}
+
           <div className="video-label">
-            {user.role === 'recruiter' ? interview?.studentId?.name : interview?.recruiterId?.name}
+            You — {user?.name}
           </div>
-          
+
           {isRecording && (
             <div className="recording-indicator">
               <span className="rec-dot"></span>
@@ -326,7 +431,7 @@ const InterviewRoom = () => {
 
       <div className="controls-panel">
         <div className="media-controls">
-          <button 
+          <button
             className={`control-btn ${isMuted ? 'muted' : ''}`}
             onClick={toggleMute}
             title={isMuted ? 'Unmute' : 'Mute'}
@@ -334,7 +439,7 @@ const InterviewRoom = () => {
             {isMuted ? <FiMicOff /> : <FiMic />}
           </button>
 
-          <button 
+          <button
             className={`control-btn ${isVideoOff ? 'video-off' : ''}`}
             onClick={toggleVideo}
             title={isVideoOff ? 'Turn on camera' : 'Turn off camera'}
@@ -342,7 +447,7 @@ const InterviewRoom = () => {
             {isVideoOff ? <FiVideoOff /> : <FiVideo />}
           </button>
 
-          <button 
+          <button
             className="control-btn end-call"
             onClick={leaveInterview}
             title="Leave interview"
@@ -355,62 +460,117 @@ const InterviewRoom = () => {
       {user.role === 'recruiter' && (
         <div className="interview-sidebar">
           <div className="sidebar-tabs">
-            <button className="tab-btn active">
+            <button
+              className={`tab-btn ${activeTab === 'questions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('questions')}
+            >
               <FiFileText /> Questions
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'scoring' ? 'active' : ''}`}
+              onClick={() => setActiveTab('scoring')}
+            >
+              <FiStar /> Live Scoring
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
+              onClick={() => setActiveTab('notes')}
+            >
+              📝 Notes
             </button>
           </div>
 
           <div className="tab-content">
-            <div className="questions-section">
-              <h3>Interview Questions</h3>
-              
-              <div className="add-question">
-                <select 
-                  value={questionCategory} 
-                  onChange={(e) => setQuestionCategory(e.target.value)}
+            {/* ─── QUESTIONS TAB ─── */}
+            {activeTab === 'questions' && (
+              <div className="questions-section">
+                <h3>Interview Questions</h3>
+
+                <div className="add-question">
+                  <select
+                    value={questionCategory}
+                    onChange={(e) => setQuestionCategory(e.target.value)}
+                  >
+                    <option value="technical">Technical</option>
+                    <option value="behavioral">Behavioral</option>
+                    <option value="situational">Situational</option>
+                  </select>
+
+                  <textarea
+                    value={currentQuestion}
+                    onChange={(e) => setCurrentQuestion(e.target.value)}
+                    placeholder="Enter your question..."
+                    rows="2"
+                    onKeyDown={(e) => { if (e.key === 'Enter' && e.ctrlKey) addQuestion(); }}
+                  />
+
+                  <button onClick={addQuestion} className="btn-add">
+                    + Add Question
+                  </button>
+                </div>
+
+                <div className="questions-list">
+                  {questions.length === 0 && (
+                    <p className="no-questions">No questions added yet.</p>
+                  )}
+                  {questions.map((q, index) => (
+                    <div key={index} className="question-item">
+                      <span className={`category-badge ${q.category}`}>
+                        {q.category}
+                      </span>
+                      <p>{q.question}</p>
+                      <small>{new Date(q.askedAt).toLocaleTimeString()}</small>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ─── LIVE SCORING TAB ─── */}
+            {activeTab === 'scoring' && (
+              <div className="scoring-section">
+                <h3>Live Candidate Scores</h3>
+                <p className="scoring-hint">Adjust scores during the interview. They are auto-saved every 30 seconds.</p>
+
+                <div className="overall-badge">
+                  <span>Overall Score</span>
+                  <strong>
+                    {Math.round((liveScores.technicalScore + liveScores.communicationScore + liveScores.confidenceScore) / 3)}
+                    <small>/100</small>
+                  </strong>
+                </div>
+
+                <div className="sliders-container">
+                  <ScoreSlider label="Technical Skills" field="technicalScore" emoji="⚙️" />
+                  <ScoreSlider label="Communication" field="communicationScore" emoji="💬" />
+                  <ScoreSlider label="Confidence" field="confidenceScore" emoji="🎯" />
+                </div>
+
+                <button
+                  onClick={() => saveLiveFeedback(false)}
+                  className="btn-save-scores"
+                  disabled={savingFeedback}
                 >
-                  <option value="technical">Technical</option>
-                  <option value="behavioral">Behavioral</option>
-                  <option value="situational">Situational</option>
-                </select>
-                
-                <textarea
-                  value={currentQuestion}
-                  onChange={(e) => setCurrentQuestion(e.target.value)}
-                  placeholder="Enter your question..."
-                  rows="2"
-                />
-                
-                <button onClick={addQuestion} className="btn-add">
-                  Add Question
+                  <FiSave /> {savingFeedback ? 'Saving...' : 'Save Scores Now'}
                 </button>
               </div>
+            )}
 
-              <div className="questions-list">
-                {questions.map((q, index) => (
-                  <div key={index} className="question-item">
-                    <span className={`category-badge ${q.category}`}>
-                      {q.category}
-                    </span>
-                    <p>{q.question}</p>
-                    <small>{new Date(q.askedAt).toLocaleTimeString()}</small>
-                  </div>
-                ))}
+            {/* ─── NOTES TAB ─── */}
+            {activeTab === 'notes' && (
+              <div className="notes-section">
+                <h3>Interview Notes</h3>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Take notes during the interview...&#10;&#10;• Key observations&#10;• Red flags&#10;• Notable answers"
+                  rows="12"
+                />
+                <button onClick={saveNotes} className="btn-save">
+                  Save Notes
+                </button>
               </div>
-            </div>
-
-            <div className="notes-section">
-              <h3>Interview Notes</h3>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Take notes during the interview..."
-                rows="10"
-              />
-              <button onClick={saveNotes} className="btn-save">
-                Save Notes
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}

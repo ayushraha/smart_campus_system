@@ -1,0 +1,48 @@
+Aayush Rahangdale
+ayushrahangdale727@gmail.com | 8552877591 | At Gongale, Post-Pandhari, Tah-S/Arjuni, Dist-Gondia
+Linkedin | GitHub
+Education
+SPPU university	Pune
+Computer Science B.E	Nov 2022 - July 2026
+CGPA: 9.29
+Experience
+BHARAT INTERN | Backend Developer	Jan 2024 - Feb 2024
+1)Developed and maintained RESTful APIs using Node.js and Express.js for real-world applications.
+2)Integrated MongoDB for data modeling, CRUD operations, and performance optimization.
+3)Implemented user authentication and authorization using JWT and bcrypt for secure access control.
+4)Collaborated with frontend teams to de ne API contracts, handled cross-origin requests (CORS), and improved response times.
+5)Used Postman for API testing and documentation; managed project work ow with Git and GitHub.
+CodeAlpha Private Limited | C++ programming	Dec 2024 - Jan 2025
+1)Practiced core C++ concepts: OOP, STL, File Handling, Pointers.
+2)Built mini projects including Snake & Ladder Game and Scienti c Calculator using OOP principles.
+Skills
+
+Programming Languages:	HTML5, CSS3, C++
+Libraries/Frameworks:	React, DOM Manipulation, JavaScript Tools / Platforms:	Git & GitHub, VS Code, Postman Databases:	SQL, MongoDB
+
+Projects / Open-Source
+Personal Portfolio Website | Link	HTML,CSS and Javascript
+1)A dynamic personal site to showcase projects, skills, certi cations, and contact info.
+2)Implemented modern UI, animations, and interactive elements to enhance user engagement.
+3)Deployed on GitHub Pages.
+
+Student Attendance Management System  HTML, CSS, JAVASCRIPT, REACT JS, MongoDB,Node.js
+1)Created a full-stack system with role-based login (teacher/student).
+2)Teachers can mark attendance; students can view attendance in real-time.
+3)Built APIs with Node.js and Express, connected with MongoDB for data persistence
+
+Voting Application | Link	Node.js, Express.js, MongoDB, Postman
+1)Built a role-based voting backend with secure RESTful APIs for user auth, vote casting, and
+candidate management.
+2)Implemented JWT authentication, bcrypt password hashing, and one-user-one-vote logic.
+3)Used Postman for API testing & documentation; followed MVC architecture with proper error handling.
+4)Managed data in MongoDB, applied express-validator, and maintained code with Git.
+
+Certifications
+  Web Development Bootcamp - Udemy
+  Frontend Development Internship - Bharat Intern
+  C++ programming - CodeAlpha Pvt Ltd
+  DSA using C++ - CodeHelp.
+Honors & Awards
+  Ranked 3rd in First Year JSCOE College
+  Solved DSA problems (LinkedIn documented)

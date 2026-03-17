@@ -632,3 +632,175 @@
     padding-left: 25px;
   }
 }
+
+/* ================================================================
+   STUDENT DASHBOARD - NAVIGATION SECTION STYLING
+   Add these styles to your existing Student.css file
+   ================================================================ */
+
+/* Navigation Section Titles */
+.nav-section-title {
+  padding: 15px 15px 8px 15px;
+  margin-top: 12px;
+  margin-bottom: 5px;
+  font-size: 0.75em;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* First section doesn't need top border */
+.nav-section-title:first-of-type {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Navigation Links - Enhanced Styling */
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  margin: 4px 8px;
+  text-decoration: none;
+  color: #555;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  position: relative;
+}
+
+/* Hover State */
+.sidebar-nav a:hover {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  color: #667eea;
+  transform: translateX(4px);
+}
+
+/* Active State */
+.sidebar-nav a.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Icons */
+.sidebar-nav a svg,
+.sidebar-nav a [data-icon] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Mentorship Section - Special Styling */
+.sidebar-nav a[href*="mentorship"],
+.sidebar-nav a[href*="become-mentor"] {
+  position: relative;
+}
+
+.sidebar-nav a[href*="mentorship"]::before,
+.sidebar-nav a[href*="become-mentor"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0 3px 3px 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-nav a[href*="mentorship"]:hover::before,
+.sidebar-nav a[href*="become-mentor"]:hover::before {
+  opacity: 1;
+}
+
+.sidebar-nav a[href*="mentorship"].active::before,
+.sidebar-nav a[href*="become-mentor"].active::before {
+  opacity: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .nav-section-title {
+    padding: 12px 12px 6px 12px;
+    font-size: 0.7em;
+    margin-top: 8px;
+    margin-bottom: 3px;
+  }
+
+  .sidebar-nav a {
+    padding: 10px 12px;
+    margin: 3px 6px;
+    gap: 10px;
+    font-size: 0.9em;
+  }
+
+  .sidebar-nav a svg,
+  .sidebar-nav a [data-icon] {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-section-title {
+    padding: 10px 10px 5px 10px;
+    font-size: 0.65em;
+    letter-spacing: 0.5px;
+  }
+
+  .sidebar-nav a {
+    padding: 8px 10px;
+    margin: 2px 4px;
+    font-size: 0.85em;
+  }
+
+  /* Hide section titles on very small screens */
+  .sidebar-nav .nav-section-title {
+    display: none;
+  }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+  .nav-section-title {
+    color: #666;
+    border-top-color: #333;
+  }
+
+  .sidebar-nav a {
+    color: #ddd;
+  }
+
+  .sidebar-nav a:hover {
+    background: linear-gradient(135deg, #667eea25 0%, #764ba225 100%);
+    color: #667eea;
+  }
+}
+
+/* Animation for new items */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sidebar-nav a[href*="mentorship"],
+.sidebar-nav a[href*="become-mentor"] {
+  animation: slideInLeft 0.3s ease;
+}
