@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Search, Download, Eye, X, Upload, QrCode } from 'lucide-react';
 import jsQR from 'jsqr';
 
