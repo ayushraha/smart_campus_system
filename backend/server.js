@@ -11,14 +11,64 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require('socket.io');
 
-// ✅ Middleware
+// ✅ Environment validation
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000',
   'https://smart-campus-system-1vbi.vercel.app',
   process.env.FRONTEND_URL
 ].filter(Boolean);
+
+const io = new Server(server, {
+  path: '/socket.io/',
+  cors: {
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        callback(null, true);
+      } else {
+        callback(null, true); // For debugging, allow all temporarily if needed, but let's be more permissive with vercel
+      }
+    },
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket', 'polling']
+});
+
+// ✅ Socket.io Signaling Logic for Interviews
+io.on('connection', (socket) => {
+  console.log('🔌 New client connected:', socket.id);
+
+  socket.on('join-room', (roomId) => {
+    socket.join(roomId);
+    console.log(`👤 User ${socket.id} joined room: ${roomId}`);
+    socket.to(roomId).emit('user-joined', socket.id);
+  });
+
+  socket.on('signal', (data) => {
+    if (data.to) {
+      io.to(data.to).emit('signal', {
+        from: socket.id,
+        signalData: data.signalData
+      });
+    } else {
+      socket.to(data.roomId).emit('signal', {
+        from: socket.id,
+        signalData: data.signalData
+      });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔌 Client disconnected:', socket.id);
+  });
+});
+
+// ✅ Middleware
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -176,54 +226,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ✅ Start server
-const PORT = process.env.PORT || 5000;
-const http = require('http');
-const server = http.createServer(app);
-const { Server } = require('socket.io');
-
-const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
-});
-
-// ✅ Socket.io Signaling Logic for Interviews
-io.on('connection', (socket) => {
-  console.log('🔌 New client connected:', socket.id);
-
-  socket.on('join-room', (roomId) => {
-    socket.join(roomId);
-    console.log(`👤 User ${socket.id} joined room: ${roomId}`);
-    socket.to(roomId).emit('user-joined', socket.id);
-  });
-
-  socket.on('signal', (data) => {
-    // data should contain { roomId, signalData, to }
-    if (data.to) {
-      io.to(data.to).emit('signal', {
-        from: socket.id,
-        signalData: data.signalData
-      });
-    } else {
-      socket.to(data.roomId).emit('signal', {
-        from: socket.id,
-        signalData: data.signalData
-      });
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('🔌 Client disconnected:', socket.id);
-  });
-});
-
 server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`📝 API Documentation:`);
-  console.log(`   - Health: GET http://localhost:${PORT}/health`);
-  console.log(`   - AI Chat: /api/ai-chat/*`);
-  console.log(`   - Resume Parser: /api/resume-parser/*`);
+  console.log(`📡 Socket.io initialized with path: /socket.io/`);
 });

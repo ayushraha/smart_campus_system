@@ -197,11 +197,28 @@ const InterviewRoom = () => {
 
       // Initialize Socket
       const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000').replace(/\/api$/, '');
-      socketRef.current = io(API_BASE);
+      console.log('📡 Connecting to socket at:', API_BASE);
+      
+      socketRef.current = io(API_BASE, {
+        path: '/socket.io/',
+        transports: ['websocket', 'polling'],
+        forceNew: true,
+        reconnectionAttempts: 5,
+        timeout: 10000
+      });
 
       socketRef.current.on('connect', () => {
-        console.log('🔌 Connected to signaling server');
+        console.log('🔌 Connected to signaling server with ID:', socketRef.current.id);
         socketRef.current.emit('join-room', roomId);
+      });
+
+      socketRef.current.on('connect_error', (err) => {
+        console.error('❌ Socket connection error:', err);
+        toast.error('Connection error: ' + err.message);
+      });
+
+      socketRef.current.on('error', (err) => {
+        console.error('❌ Socket error:', err);
       });
 
       socketRef.current.on('user-joined', async (userId) => {
