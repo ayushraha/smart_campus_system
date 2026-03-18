@@ -178,7 +178,49 @@ app.use((err, req, res, next) => {
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require('socket.io');
+
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// ✅ Socket.io Signaling Logic for Interviews
+io.on('connection', (socket) => {
+  console.log('🔌 New client connected:', socket.id);
+
+  socket.on('join-room', (roomId) => {
+    socket.join(roomId);
+    console.log(`👤 User ${socket.id} joined room: ${roomId}`);
+    socket.to(roomId).emit('user-joined', socket.id);
+  });
+
+  socket.on('signal', (data) => {
+    // data should contain { roomId, signalData, to }
+    if (data.to) {
+      io.to(data.to).emit('signal', {
+        from: socket.id,
+        signalData: data.signalData
+      });
+    } else {
+      socket.to(data.roomId).emit('signal', {
+        from: socket.id,
+        signalData: data.signalData
+      });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔌 Client disconnected:', socket.id);
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`📝 API Documentation:`);
   console.log(`   - Health: GET http://localhost:${PORT}/health`);

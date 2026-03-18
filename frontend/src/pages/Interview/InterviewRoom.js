@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhoneOff, FiFileText, FiStar, FiSave
 } from 'react-icons/fi';
+import io from 'socket.io-client';
 import './Interview.css';
 
 const InterviewRoom = () => {
@@ -44,8 +45,19 @@ const InterviewRoom = () => {
   // Two separate video refs to avoid black screen bug
   const lobbyVideoRef = useRef(null);
   const roomVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const autoSaveTimerRef = useRef(null);
+  const socketRef = useRef(null);
+  const peerConnectionRef = useRef(null);
+
+  const ICE_SERVERS = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' }
+    ]
+  };
 
   const fetchInterviewDetails = useCallback(async () => {
     try {
@@ -145,6 +157,36 @@ const InterviewRoom = () => {
     }
   };
 
+  const createPeerConnection = useCallback((socketId) => {
+    const pc = new RTCPeerConnection(ICE_SERVERS);
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socketRef.current.emit('signal', {
+          roomId,
+          to: socketId,
+          signalData: { type: 'ice-candidate', candidate: event.candidate }
+        });
+      }
+    };
+
+    pc.ontrack = (event) => {
+      console.log('📡 Received remote track:', event.streams[0]);
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+      }
+    };
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => {
+        pc.addTrack(track, mediaStreamRef.current);
+      });
+    }
+
+    peerConnectionRef.current = pc;
+    return pc;
+  }, [roomId]);
+
   const joinInterview = async () => {
     try {
       const stream = mediaStreamRef.current || await startLocalStream();
@@ -152,6 +194,57 @@ const InterviewRoom = () => {
         toast.error('Cannot join without camera/microphone access');
         return;
       }
+
+      // Initialize Socket
+      const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000').replace(/\/api$/, '');
+      socketRef.current = io(API_BASE);
+
+      socketRef.current.on('connect', () => {
+        console.log('🔌 Connected to signaling server');
+        socketRef.current.emit('join-room', roomId);
+      });
+
+      socketRef.current.on('user-joined', async (userId) => {
+        console.log('👤 Another user joined:', userId);
+        const pc = createPeerConnection(userId);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socketRef.current.emit('signal', {
+          roomId,
+          to: userId,
+          signalData: { type: 'offer', offer }
+        });
+      });
+
+      socketRef.current.on('signal', async (data) => {
+        const { from, signalData } = data;
+
+        if (signalData.type === 'offer') {
+          console.log('📨 Received offer from:', from);
+          const pc = createPeerConnection(from);
+          await pc.setRemoteDescription(new RTCSessionDescription(signalData.offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          socketRef.current.emit('signal', {
+            roomId,
+            to: from,
+            signalData: { type: 'answer', answer }
+          });
+        } else if (signalData.type === 'answer') {
+          console.log('📨 Received answer from:', from);
+          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(signalData.answer));
+        } else if (signalData.type === 'ice-candidate') {
+          console.log('📨 Received ICE candidate from:', from);
+          try {
+            if (peerConnectionRef.current) {
+              await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(signalData.candidate));
+            }
+          } catch (e) {
+            console.error('Error adding received ice candidate', e);
+          }
+        }
+      });
+
       await axios.put(`/api/interview/${interview._id}/start`);
       setInCall(true);
       setIsRecording(true);
@@ -166,6 +259,12 @@ const InterviewRoom = () => {
     try {
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+      }
+      if (socketRef.current) {
+        socketRef.current.disconnect();
       }
       // Save live feedback before leaving (recruiter)
       if (user?.role === 'recruiter') {
@@ -397,15 +496,34 @@ const InterviewRoom = () => {
     <div className="interview-room">
       <div className="video-container">
         <div className="main-video">
-          {/* Room video ref — separate from lobby to prevent black screen */}
+          {/* Remote video ref */}
           <video
-            ref={roomVideoRef}
+            ref={remoteVideoRef}
             autoPlay
-            muted
             playsInline
-            className="local-video-main"
-            style={{ transform: 'scaleX(-1)' }}
+            className="remote-video"
           />
+          {!remoteVideoRef.current?.srcObject && (
+            <div className="remote-placeholder">
+              <div className="avatar-placeholder big">
+                {user.role === 'recruiter' ? interview?.studentId?.name?.charAt(0) : interview?.recruiterId?.name?.charAt(0)}
+              </div>
+              <p>Waiting for {user.role === 'recruiter' ? 'candidate' : 'interviewer'} to join...</p>
+            </div>
+          )}
+
+          {/* Local video ref — separate from lobby to prevent black screen */}
+          <div className="local-video-container">
+            <video
+              ref={roomVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="local-video"
+              style={{ transform: 'scaleX(-1)' }}
+            />
+            <div className="video-label">You</div>
+          </div>
 
           {isVideoOff && (
             <div className="video-off-overlay">
@@ -415,10 +533,6 @@ const InterviewRoom = () => {
               <p>Camera Off</p>
             </div>
           )}
-
-          <div className="video-label">
-            You — {user?.name}
-          </div>
 
           {isRecording && (
             <div className="recording-indicator">
