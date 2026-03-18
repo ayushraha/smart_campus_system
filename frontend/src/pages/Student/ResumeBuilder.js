@@ -4,8 +4,10 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { 
   FiSave, FiDownload, FiEye, FiPlus, FiTrash2, 
-  FiCheckCircle, FiAlertCircle 
+  FiCheckCircle, FiAlertCircle, FiLayout 
 } from 'react-icons/fi';
+import TemplateSelector from '../../components/ResumeTemplates/TemplateSelector';
+import ResumePreview from '../../components/ResumeTemplates/ResumePreview';
 import './ResumeBuilder.css';
 
 const ResumeBuilder = () => {
@@ -14,6 +16,8 @@ const ResumeBuilder = () => {
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('personal');
   const [completeness, setCompleteness] = useState(0);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const [resumeData, setResumeData] = useState({
     personalInfo: {
@@ -50,6 +54,9 @@ const ResumeBuilder = () => {
   useEffect(() => {
     if (resumeId) {
       fetchResume();
+    } else {
+      // New resume - show template selector automatically
+      setShowTemplateSelector(true);
     }
   }, [resumeId]);
 
@@ -131,6 +138,23 @@ const ResumeBuilder = () => {
     link.href = url;
     link.download = `${resumeData.personalInfo?.firstName || 'My'}_Resume.json`;
     link.click();
+  };
+
+  const handleDownloadPDF = () => {
+    // Save current state first
+    handleSave();
+    
+    // Switch to preview mode and trigger print
+    setIsPreviewMode(true);
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
+  const selectTemplate = (templateId) => {
+    setResumeData({ ...resumeData, template: templateId });
+    setShowTemplateSelector(false);
+    toast.success(`Switched to ${templateId.toUpperCase()} template`);
   };
 
   const handlePersonalInfoChange = (field, value) => {
@@ -273,23 +297,40 @@ const ResumeBuilder = () => {
         </div>
         
         <div className="header-actions">
-          <button onClick={() => navigate('/student/resume')} className="btn-preview">
-            <FiEye /> Back to List
+          <button onClick={() => navigate('/student/resume')} className="btn-preview no-print">
+            <FiEye /> Back
           </button>
-          <button onClick={handleDownload} className="btn-download-alt">
-            <FiDownload /> Download
+          <button onClick={() => setIsPreviewMode(!isPreviewMode)} className={`btn-preview no-print ${isPreviewMode ? 'active' : ''}`}>
+            <FiEye /> {isPreviewMode ? 'Edit Mode' : 'Preview'}
           </button>
-          <button onClick={handleAnalyze} disabled={loading || !resumeId} className="btn-analyze-alt">
+          <button onClick={handleDownloadPDF} className="btn-download-alt no-print">
+            <FiDownload /> Download PDF
+          </button>
+          <button onClick={handleAnalyze} disabled={loading || !resumeId} className="btn-analyze-alt no-print">
             {loading ? 'Analyzing...' : 'Analyze with AI'}
           </button>
-          <button onClick={handleSave} disabled={loading} className="btn-save">
+          <button onClick={handleSave} disabled={loading} className="btn-save no-print">
             <FiSave /> {loading ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>
 
+      {showTemplateSelector && (
+        <TemplateSelector 
+          selectedTemplate={resumeData.template} 
+          onSelect={selectTemplate} 
+          onClose={() => setShowTemplateSelector(false)} 
+        />
+      )}
+
       <div className="builder-container">
-        <div className="sections-sidebar">
+        <div className="sections-sidebar no-print">
+          <button 
+            className="template-btn"
+            onClick={() => setShowTemplateSelector(true)}
+          >
+            <FiLayout /> Change Template
+          </button>
           <button 
             className={activeSection === 'personal' ? 'active' : ''}
             onClick={() => setActiveSection('personal')}
@@ -335,8 +376,12 @@ const ResumeBuilder = () => {
         </div>
 
         <div className="builder-content">
-          {/* Personal Information Section */}
-          {activeSection === 'personal' && (
+          {isPreviewMode ? (
+            <ResumePreview data={resumeData} templateId={resumeData.template} />
+          ) : (
+            <>
+              {/* Personal Information Section */}
+              {activeSection === 'personal' && (
             <div className="section-content">
               <h2>Personal Information</h2>
               
@@ -760,20 +805,21 @@ const ResumeBuilder = () => {
             </div>
           )}
 
-          {/* Certifications Section */}
-          {activeSection === 'certifications' && (
-            <div className="section-content">
-              <div className="section-header">
-                <h2>Certifications</h2>
-                <button className="btn-add">
-                  <FiPlus /> Add Certification
-                </button>
-              </div>
-              <div className="empty-state">
-                <FiAlertCircle />
-                <p>Certifications feature coming soon!</p>
-              </div>
-            </div>
+              {activeSection === 'certifications' && (
+                <div className="section-content">
+                  <div className="section-header">
+                    <h2>Certifications</h2>
+                    <button className="btn-add">
+                      <FiPlus /> Add Certification
+                    </button>
+                  </div>
+                  <div className="empty-state">
+                    <FiAlertCircle />
+                    <p>Certifications feature coming soon!</p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

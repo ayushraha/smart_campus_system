@@ -1,0 +1,134 @@
+/* ResumeTemplates.css */
+
+/* Print Styles for PDF Export */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Template Container */
+.resume-preview-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: #f1f5f9;
+}
+
+.resume-template {
+  background: white;
+  width: 210mm; /* A4 width */
+  min-height: 297mm; /* A4 height */
+  margin: 0 auto;
+  padding: 20mm;
+  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+  color: #333;
+  line-height: 1.5;
+  font-family: 'Inter', sans-serif;
+}
+
+/* MARK Template (Minimalist) */
+.template-mark {
+  font-family: 'Helvetica', 'Arial', sans-serif;
+}
+.template-mark h1 {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 28px;
+  margin-bottom: 5px;
+}
+.template-mark .header-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 20px;
+}
+.template-mark h2 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+  margin-top: 25px;
+  color: #444;
+}
+
+/* LANA Template (Modern) */
+.template-lana {
+  font-family: 'Roboto', sans-serif;
+}
+.template-lana .header {
+  margin-bottom: 30px;
+}
+.template-lana h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+}
+.template-lana .contact-bar {
+  display: flex;
+  gap: 15px;
+  background: #f8fafc;
+  padding: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #555;
+  border-radius: 4px;
+}
+.template-lana h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 20px;
+  color: #333;
+}
+
+/* BLOGGER Template (Classic/Iconic) */
+.template-blogger {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+}
+.template-blogger .left-col {
+  border-right: 1px solid #eee;
+  padding-right: 20px;
+}
+.template-blogger h1 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+.template-blogger .section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-top: 20px;
+  font-size: 15px;
+}
+
+/* Common Section Styles */
+.resume-section {
+  margin-bottom: 20px;
+}
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+.item-meta {
+  font-size: 13px;
+  color: #777;
+  font-style: italic;
+}
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.tag {
+  background: #eee;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+}
