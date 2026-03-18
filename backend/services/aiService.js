@@ -91,22 +91,37 @@ async function analyzeResumeWithGemini(resume, jobDescription) {
   }
 
   const prompt = `
-    Analyze this resume for ATS compatibility and provide detailed feedback.
+    You are an expert ATS (Applicant Tracking System) and HR professional.
+    Analyze the following resume against the job description provided.
     
-    Job Description: ${jobDescription || 'General position'}
+    JOB DESCRIPTION: ${jobDescription || 'General Software Engineering / Professional Position'}
     
-    Resume:
+    RESUME DATA:
     - Name: ${resume.personalInfo?.firstName} ${resume.personalInfo?.lastName}
-    - Skills: ${JSON.stringify(resume.skills?.technical || [])}
-    - Experience: ${resume.experience?.length || 0} positions
-    - Education: ${resume.education?.length || 0} degrees
+    - Summary: ${resume.personalInfo?.professionalSummary || 'No summary'}
+    - Skills: ${JSON.stringify(resume.skills || {})}
+    - Experience: ${JSON.stringify(resume.experience || [])}
+    - Education: ${JSON.stringify(resume.education || [])}
+    - Projects: ${JSON.stringify(resume.projects || [])}
     
-    Provide JSON with: atsScore (0-100), strengths, weaknesses, suggestions, overallRating
+    Provide a detailed analysis in JSON format ONLY:
+    {
+      "atsScore": <number 0-100 indicating match quality>,
+      "strengths": [<array of 3-5 key resume strengths>],
+      "weaknesses": [<array of 2-3 areas for improvement>],
+      "suggestions": [<array of 3-5 specific tips to improve the resume>],
+      "overallRating": "excellent|good|average|needs-improvement",
+      "keywordMatches": [
+        {"keyword": "example", "present": true, "importance": "high"}
+      ]
+    }
+    
+    Return ONLY valid JSON.
   `;
 
   try {
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         contents: [{
           parts: [{
@@ -115,9 +130,7 @@ async function analyzeResumeWithGemini(resume, jobDescription) {
         }]
       },
       {
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
       }
     );
 
@@ -128,9 +141,9 @@ async function analyzeResumeWithGemini(resume, jobDescription) {
       return JSON.parse(jsonMatch[0]);
     }
     
-    throw new Error('Invalid AI response format');
+    throw new Error('Failed to parse Gemini AI JSON response');
   } catch (error) {
-    console.error('Gemini Error:', error.message);
+    console.error('Gemini Analysis Error:', error.response?.data || error.message);
     throw error;
   }
 }

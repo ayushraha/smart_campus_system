@@ -87,6 +87,42 @@
   cursor: not-allowed;
 }
 
+.btn-download-alt,
+.btn-analyze-alt {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.btn-download-alt {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.btn-download-alt:hover {
+  background: #d1fae5;
+}
+
+.btn-analyze-alt {
+  background: #fdf2f8;
+  color: #db2777;
+}
+
+.btn-analyze-alt:hover {
+  background: #fce7f3;
+}
+
+.btn-analyze-alt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .builder-container {
   display: flex;
   gap: 20px;

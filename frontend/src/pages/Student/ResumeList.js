@@ -105,10 +105,43 @@ const ResumeList = () => {
       }
 
       const parsedJson = parseResponse.data.data;
-      parsedJson.template = 'professional'; // default
+      
+      // Normalize Gemini output to our Resume model schema
+      const normalizedData = {
+        personalInfo: {
+          firstName: parsedJson.personalInfo?.name?.split(' ')[0] || '',
+          lastName: parsedJson.personalInfo?.name?.split(' ').slice(1).join(' ') || '',
+          email: parsedJson.personalInfo?.email || '',
+          phone: parsedJson.personalInfo?.phone || '',
+          address: parsedJson.personalInfo?.location || '',
+          professionalSummary: parsedJson.personalInfo?.summary || ''
+        },
+        skills: parsedJson.skills || { technical: [], soft: [], tools: [] },
+        experience: (parsedJson.experience || []).map(exp => ({
+          title: exp.jobTitle || '',
+          company: exp.company || '',
+          description: exp.description || '',
+          startDate: exp.duration?.split('-')[0]?.trim() || '',
+          endDate: exp.duration?.split('-')[1]?.trim() || '',
+          responsibilities: typeof exp.description === 'string' ? exp.description.split('\n').filter(l => l.trim()) : []
+        })),
+        education: (parsedJson.education || []).map(edu => ({
+          degree: edu.degree || '',
+          institution: edu.institution || '',
+          major: edu.field || '',
+          endDate: edu.graduationYear || '',
+          cgpa: edu.grade || ''
+        })),
+        projects: (parsedJson.projects || []).map(proj => ({
+          title: proj.title || '',
+          description: proj.description || '',
+          technologies: proj.technologies || []
+        })),
+        template: 'professional'
+      };
 
       // 2. Save the extracted JSON to the database
-      const saveResponse = await axios.post('/api/resume', parsedJson);
+      const saveResponse = await axios.post('/api/resume', normalizedData);
 
       toast.success('Resume uploaded and parsed successfully!');
       setShowUploadModal(false);

@@ -98,6 +98,41 @@ const ResumeBuilder = () => {
     }
   };
 
+  const handleAnalyze = async () => {
+    if (!resumeId) {
+      toast.warning('Please save your resume first before analyzing');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      toast.info('Analyzing resume with AI...', { autoClose: 3000 });
+      const response = await axios.post(`/api/resume/${resumeId}/analyze`, { 
+        jobDescription: "General Software Engineering Role" 
+      });
+      toast.success('AI Analysis complete!');
+      setResumeData({
+        ...resumeData,
+        aiAnalysis: response.data.analysis
+      });
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast.error('Error analyzing resume with AI');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = () => {
+    const dataStr = JSON.stringify(resumeData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${resumeData.personalInfo?.firstName || 'My'}_Resume.json`;
+    link.click();
+  };
+
   const handlePersonalInfoChange = (field, value) => {
     setResumeData({
       ...resumeData,
@@ -238,8 +273,14 @@ const ResumeBuilder = () => {
         </div>
         
         <div className="header-actions">
-          <button onClick={() => navigate('/student/resume/preview/' + resumeId)} className="btn-preview">
-            <FiEye /> Preview
+          <button onClick={() => navigate('/student/resume')} className="btn-preview">
+            <FiEye /> Back to List
+          </button>
+          <button onClick={handleDownload} className="btn-download-alt">
+            <FiDownload /> Download
+          </button>
+          <button onClick={handleAnalyze} disabled={loading || !resumeId} className="btn-analyze-alt">
+            {loading ? 'Analyzing...' : 'Analyze with AI'}
           </button>
           <button onClick={handleSave} disabled={loading} className="btn-save">
             <FiSave /> {loading ? 'Saving...' : 'Save'}
