@@ -341,18 +341,6 @@ router.post('/:interviewId/generate-analysis', auth, checkRole('recruiter', 'adm
     const updatedAnalysis = {
       ...a,
       responseQuality: quality,
-      sentimentAnalysis: {
-        positive: Math.min(overall / 100, 0.9),
-        neutral: 0.1 + (100 - overall) / 200,
-        negative: Math.max(0.02, (100 - overall) / 250)
-      },
-      eyeContact: a.eyeContact || { score: conf, feedback: confFeedback },
-      bodyLanguage: a.bodyLanguage || { score: conf, feedback: confFeedback },
-      speakingPace: a.speakingPace || { score: comm, feedback: commFeedback },
-      keywordMatches: a.keywordMatches?.length ? a.keywordMatches : ['problem-solving', 'communication', 'teamwork'],
-      averageResponseTime: a.averageResponseTime || 8,
-      totalSpeakingTime: a.totalSpeakingTime || (interview.duration || 30) * 60 * 0.6,
-      fillerWordsCount: a.fillerWordsCount || 0,
       strengths: a.strengths?.length ? a.strengths : strengths,
       weaknesses: a.weaknesses?.length ? a.weaknesses : weaknesses,
       recommendations,

@@ -14,6 +14,7 @@ const app = express();
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require('socket.io');
+const PORT = process.env.PORT || 5000;
 
 // ✅ Environment validation
 const allowedOrigins = [
@@ -45,11 +46,17 @@ io.on('connection', (socket) => {
 
   socket.on('join-room', (roomId) => {
     socket.join(roomId);
+    socket.roomId = roomId; // Store roomId on socket for disconnect handling
     console.log(`👤 User ${socket.id} joined room: ${roomId}`);
     socket.to(roomId).emit('user-joined', socket.id);
   });
 
   socket.on('signal', (data) => {
+    const target = data.to || data.roomId;
+    if (!target) return;
+
+    console.log(`📡 Signal from ${socket.id} to ${target}: ${data.signalData.type}`);
+    
     if (data.to) {
       io.to(data.to).emit('signal', {
         from: socket.id,
@@ -61,6 +68,16 @@ io.on('connection', (socket) => {
         signalData: data.signalData
       });
     }
+  });
+
+  socket.on('disconnecting', () => {
+    const rooms = Array.from(socket.rooms);
+    rooms.forEach(roomId => {
+      if (roomId !== socket.id) {
+        console.log(`👋 User ${socket.id} leaving room: ${roomId}`);
+        socket.to(roomId).emit('user-left', socket.id);
+      }
+    });
   });
 
   socket.on('disconnect', () => {

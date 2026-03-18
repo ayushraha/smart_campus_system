@@ -21,6 +21,10 @@ const InterviewRoom = () => {
   // Media controls
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [remoteMediaStatus, setRemoteMediaStatus] = useState({
+    videoOff: false,
+    muted: false
+  });
   const [streamReady, setStreamReady] = useState(false);
 
   // Interview state
@@ -50,6 +54,8 @@ const InterviewRoom = () => {
   const autoSaveTimerRef = useRef(null);
   const socketRef = useRef(null);
   const peerConnectionRef = useRef(null);
+  const candidateQueueRef = useRef([]); // Buffer for ICE candidates
+  const remoteDescriptionSetRef = useRef(false);
 
   const ICE_SERVERS = {
     iceServers: [
@@ -158,10 +164,14 @@ const InterviewRoom = () => {
   };
 
   const createPeerConnection = useCallback((socketId) => {
+    console.log('🏗️ Creating new RTCPeerConnection for:', socketId);
     const pc = new RTCPeerConnection(ICE_SERVERS);
+    remoteDescriptionSetRef.current = false;
+    candidateQueueRef.current = [];
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log('📡 Sending ICE candidate to:', socketId);
         socketRef.current.emit('signal', {
           roomId,
           to: socketId,
@@ -177,7 +187,15 @@ const InterviewRoom = () => {
       }
     };
 
+    pc.oniceconnectionstatechange = () => {
+      console.log('📶 ICE Connection State:', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+        console.warn('⚠️ ICE Connection disconnected/failed');
+      }
+    };
+
     if (mediaStreamRef.current) {
+      console.log('📤 Adding local tracks to peer connection');
       mediaStreamRef.current.getTracks().forEach(track => {
         pc.addTrack(track, mediaStreamRef.current);
       });
@@ -239,27 +257,69 @@ const InterviewRoom = () => {
         if (signalData.type === 'offer') {
           console.log('📨 Received offer from:', from);
           const pc = createPeerConnection(from);
-          await pc.setRemoteDescription(new RTCSessionDescription(signalData.offer));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socketRef.current.emit('signal', {
-            roomId,
-            to: from,
-            signalData: { type: 'answer', answer }
-          });
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(signalData.offer));
+            remoteDescriptionSetRef.current = true;
+            
+            // Process buffered candidates
+            console.log(`📥 Processing ${candidateQueueRef.current.length} buffered ICE candidates`);
+            while (candidateQueueRef.current.length > 0) {
+              const candidate = candidateQueueRef.current.shift();
+              await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socketRef.current.emit('signal', {
+              roomId,
+              to: from,
+              signalData: { type: 'answer', answer }
+            });
+          } catch (err) {
+            console.error('❌ Error handling offer:', err);
+          }
         } else if (signalData.type === 'answer') {
           console.log('📨 Received answer from:', from);
-          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(signalData.answer));
+          try {
+            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(signalData.answer));
+            remoteDescriptionSetRef.current = true;
+            
+            // Process buffered candidates
+            console.log(`📥 Processing ${candidateQueueRef.current.length} buffered ICE candidates`);
+            while (candidateQueueRef.current.length > 0) {
+              const candidate = candidateQueueRef.current.shift();
+              await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+          } catch (err) {
+            console.error('❌ Error handling answer:', err);
+          }
         } else if (signalData.type === 'ice-candidate') {
           console.log('📨 Received ICE candidate from:', from);
-          try {
-            if (peerConnectionRef.current) {
+          if (remoteDescriptionSetRef.current && peerConnectionRef.current) {
+            try {
               await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(signalData.candidate));
+            } catch (e) {
+              console.error('❌ Error adding ice candidate:', e);
             }
-          } catch (e) {
-            console.error('Error adding received ice candidate', e);
+          } else {
+            console.log('⏳ Remote description not set, buffering ICE candidate');
+            candidateQueueRef.current.push(signalData.candidate);
           }
+        } else if (signalData.type === 'media-status') {
+          console.log('📨 Received media status from peer:', signalData);
+          setRemoteMediaStatus({
+            videoOff: signalData.videoOff,
+            muted: signalData.muted
+          });
         }
+      });
+
+      socketRef.current.on('user-left', (userId) => {
+        console.log('👋 User left:', userId);
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = null;
+        }
+        toast.info('The other participant has left the room');
       });
 
       await axios.put(`/api/interview/${interview._id}/start`);
@@ -324,7 +384,17 @@ const InterviewRoom = () => {
       const audioTrack = mediaStreamRef.current.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
-        setIsMuted(!audioTrack.enabled);
+        const newMuted = !audioTrack.enabled;
+        setIsMuted(newMuted);
+        
+        // Notify peer
+        if (socketRef.current) {
+          socketRef.current.emit('signal', {
+            roomId,
+            signalData: { type: 'media-status', videoOff: isVideoOff, muted: newMuted }
+          });
+        }
+        
         toast.info(audioTrack.enabled ? 'Microphone on' : 'Microphone muted');
       }
     }
@@ -335,7 +405,17 @@ const InterviewRoom = () => {
       const videoTrack = mediaStreamRef.current.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoOff(!videoTrack.enabled);
+        const newVideoOff = !videoTrack.enabled;
+        setIsVideoOff(newVideoOff);
+        
+        // Notify peer
+        if (socketRef.current) {
+          socketRef.current.emit('signal', {
+            roomId,
+            signalData: { type: 'media-status', videoOff: newVideoOff, muted: isMuted }
+          });
+        }
+        
         toast.info(videoTrack.enabled ? 'Camera on' : 'Camera off');
       }
     }
@@ -529,6 +609,21 @@ const InterviewRoom = () => {
             </div>
           )}
 
+          {remoteMediaStatus.videoOff && (
+            <div className="video-off-overlay">
+              <div className="avatar-placeholder">
+                {user.role === 'recruiter' ? interview?.studentId?.name?.charAt(0) : interview?.recruiterId?.name?.charAt(0)}
+              </div>
+              <p>{user.role === 'recruiter' ? 'Candidate' : 'Interviewer'} has turned off camera</p>
+            </div>
+          )}
+
+          {remoteMediaStatus.muted && (
+            <div className="remote-muted-indicator">
+              <FiMicOff /> Peer Muted
+            </div>
+          )}
+
           {/* Local video ref — separate from lobby to prevent black screen */}
           <div className="local-video-container">
             <video
@@ -539,17 +634,15 @@ const InterviewRoom = () => {
               className="local-video"
               style={{ transform: 'scaleX(-1)' }}
             />
+            {isVideoOff && (
+              <div className="video-off-overlay mini">
+                <div className="avatar-placeholder small">
+                  {user?.name?.charAt(0)?.toUpperCase()}
+                </div>
+              </div>
+            )}
             <div className="video-label">You</div>
           </div>
-
-          {isVideoOff && (
-            <div className="video-off-overlay">
-              <div className="avatar-placeholder">
-                {user?.name?.charAt(0)?.toUpperCase() || '?'}
-              </div>
-              <p>Camera Off</p>
-            </div>
-          )}
 
           {isRecording && (
             <div className="recording-indicator">
