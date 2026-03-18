@@ -351,6 +351,11 @@ export default function QRScanner() {
       const image = new Image();
       image.src = event.target.result;
       
+      image.onerror = () => {
+        alert("Failed to load image. Please select a valid image file.");
+        setScanning(false);
+      };
+
       image.onload = () => {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -367,7 +372,6 @@ export default function QRScanner() {
           console.log("✅ Decoded QR:", code.data);
           let rawData = code.data;
           
-          // Pattern matching for various QR formats
           let studentId = rawData;
           if (rawData.includes('/admin/student-qr/')) {
             const parts = rawData.split('/admin/student-qr/');
@@ -375,15 +379,48 @@ export default function QRScanner() {
           }
 
           setSearchTerm(studentId);
-          // Directly trigger search with the decoded ID
-          performSearch(studentId);
+          // For scanned QR, we use the specialized scan endpoint
+          performQRScan(studentId);
         } else {
           alert("Could not find a valid QR code in this image. Please try a clearer picture.");
+          setScanning(false);
         }
-        setScanning(false);
       };
     };
     reader.readAsDataURL(file);
+  };
+
+  const performQRScan = async (qrCode) => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+      
+      console.log("📡 Specialized QR Scan for:", qrCode);
+      const response = await fetch(`${API_BASE}/api/student-profile/scan-qr/${encodeURIComponent(qrCode)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success && data.profile) {
+        console.log("✅ Direct profile hit!");
+        setStudents([data.profile]);
+        setSelectedStudent(data.profile);
+      } else {
+        // Fallback to regular search if specialized scan fails
+        performSearch(qrCode);
+      }
+    } catch (error) {
+      console.error("QR Scan error:", error);
+      performSearch(qrCode);
+    } finally {
+      setLoading(false);
+      setScanning(false);
+    }
   };
 
   const handleSearch = () => {
@@ -438,6 +475,10 @@ export default function QRScanner() {
       
       if (data.success) {
         setStudents(data.profiles);
+        // If there's exactly one match, auto-open it
+        if (data.profiles.length === 1) {
+          setSelectedStudent(data.profiles[0]);
+        }
       } else {
         console.error("❌ Search failed:", data.error);
         setStudents([]);
