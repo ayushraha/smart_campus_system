@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Download, Eye, X } from 'lucide-react';
+import { Search, Download, Eye, X, Upload, QrCode } from 'lucide-react';
+import jsQR from 'jsqr';
 
 const styles = `
   .qr-scanner-container {
@@ -55,6 +55,25 @@ const styles = `
   .search-input:focus {
     outline: none;
     border-color: #667eea;
+  }
+
+  .upload-btn {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .upload-btn:hover {
+    background: #f0f4ff;
+    transform: translateY(-2px);
   }
 
   .search-btn {
@@ -319,9 +338,60 @@ export default function QRScanner() {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) {
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setScanning(true);
+    const reader = new FileReader();
+    
+    reader.onload = async (event) => {
+      const image = new Image();
+      image.src = event.target.result;
+      
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        context.drawImage(image, 0, 0, image.width, image.height);
+        
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+
+        if (code) {
+          console.log("✅ Decoded QR:", code.data);
+          let rawData = code.data;
+          
+          // Pattern matching for various QR formats
+          let studentId = rawData;
+          if (rawData.includes('/admin/student-qr/')) {
+            const parts = rawData.split('/admin/student-qr/');
+            studentId = parts[1].split('/')[0].split('?')[0];
+          }
+
+          setSearchTerm(studentId);
+          // Directly trigger search with the decoded ID
+          performSearch(studentId);
+        } else {
+          alert("Could not find a valid QR code in this image. Please try a clearer picture.");
+        }
+        setScanning(false);
+      };
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSearch = () => {
+    performSearch(searchTerm);
+  };
+
+  const performSearch = async (query) => {
+    if (!query.trim()) {
       setStudents([]);
       return;
     }
@@ -330,15 +400,7 @@ export default function QRScanner() {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      // If the user scanned the raw QR code, it might be a full URL like:
-      // https://domain.com/admin/student-qr/86ce797e5...
-      // Extract just the hash at the end.
-      let query = searchTerm.trim();
-      if (query.includes('/admin/student-qr/')) {
-        const parts = query.split('/admin/student-qr/');
-        query = parts[1].split('/')[0].split('?')[0]; // Get the ID segment
-      }
-      
+
       console.log("🔍 Searching for:", query);
       console.log("Token present:", !!token);
       const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
@@ -426,10 +488,31 @@ export default function QRScanner() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
-              <button onClick={handleSearch} className="search-btn" disabled={loading}>
+              <button onClick={handleSearch} className="search-btn" disabled={loading || scanning}>
                 <Search size={18} />
                 {loading ? 'Searching...' : 'Search'}
               </button>
+              
+              <label className="upload-btn">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                  onChange={handleImageUpload}
+                  disabled={loading || scanning}
+                />
+                {scanning ? (
+                  <>
+                    <div className="spinner" style={{ fontSize: '14px' }}>⏳</div>
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={18} />
+                    Upload QR
+                  </>
+                )}
+              </label>
             </div>
 
             {loading && (
