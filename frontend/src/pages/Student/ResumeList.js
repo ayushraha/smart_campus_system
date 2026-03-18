@@ -43,6 +43,27 @@ const ResumeList = () => {
     }
   };
 
+  const handleAnalyze = async (resumeId) => {
+    try {
+      toast.info('Analyzing resume with AI...', { autoClose: 3000 });
+      await axios.post(`/api/resume/${resumeId}/analyze`, { jobDescription: "General Software Engineering Role" });
+      toast.success('Analysis complete! Check the badge rating.');
+      fetchResumes();
+    } catch (error) {
+      toast.error('Error analyzing resume with AI.');
+    }
+  };
+
+  const handleDownload = (resume) => {
+    const dataStr = JSON.stringify(resume, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${resume.personalInfo?.firstName || 'My'}_Resume.json`;
+    link.click();
+  };
+
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -74,21 +95,33 @@ const ResumeList = () => {
       const formData = new FormData();
       formData.append('resume', selectedFile);
 
-      const response = await axios.post('/api/resume/upload-parse', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      // 1. Get parsed data using the real Gemini AI parser route we built
+      const parseResponse = await axios.post('/api/resume-parser/parse', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
+
+      if (!parseResponse.data.success) {
+        throw new Error(parseResponse.data.error || "Parsing failed");
+      }
+
+      const parsedJson = parseResponse.data.data;
+      parsedJson.template = 'professional'; // default
+
+      // 2. Save the extracted JSON to the database
+      const saveResponse = await axios.post('/api/resume', parsedJson);
 
       toast.success('Resume uploaded and parsed successfully!');
       setShowUploadModal(false);
       setSelectedFile(null);
       fetchResumes();
       
-      // Navigate to edit the parsed resume
-      navigate(`/student/resume/${response.data.resume._id}`);
+      const resumeId = saveResponse.data.resume?._id || saveResponse.data._id;
+      if (resumeId) {
+        navigate(`/student/resume/${resumeId}`);
+      }
     } catch (error) {
-      toast.error('Error uploading resume');
+      console.error(error);
+      toast.error(error.response?.data?.error || error.message || 'Error uploading resume');
     } finally {
       setUploading(false);
     }
@@ -147,9 +180,9 @@ const ResumeList = () => {
                     <FiEdit />
                   </button>
                   <button 
-                    onClick={() => navigate(`/student/resume/preview/${resume._id}`)}
+                    onClick={() => navigate(`/student/resume/${resume._id}`)}
                     className="btn-icon"
-                    title="Preview"
+                    title="View / Edit"
                   >
                     <FiEye />
                   </button>
@@ -200,12 +233,12 @@ const ResumeList = () => {
 
               <div className="card-footer">
                 <button 
-                  onClick={() => navigate(`/student/resume/analyze/${resume._id}`)}
+                  onClick={() => handleAnalyze(resume._id)}
                   className="btn-analyze"
                 >
                   Analyze with AI
                 </button>
-                <button className="btn-download">
+                <button onClick={() => handleDownload(resume)} className="btn-download">
                   <FiDownload /> Download
                 </button>
               </div>
