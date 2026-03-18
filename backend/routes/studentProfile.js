@@ -157,12 +157,28 @@ router.get('/admin/search/:searchTerm', auth, checkRole('admin'), async (req, re
       return res.status(400).json({ success: false, error: 'Search term cannot be empty' });
     }
 
+    const regexOptions = { $regex: searchTerm, $options: 'i' };
+    
+    // For handling spaces in full names: "Aayush Rahangdale" -> /Aayush.*Rahangdale/i
+    const flexRegex = new RegExp(searchTerm.split(' ').join('.*'), 'i');
+
     const profiles = await StudentProfile.find({
       $or: [
-        { 'personalInfo.firstName': { $regex: searchTerm, $options: 'i' } },
-        { 'personalInfo.lastName':  { $regex: searchTerm, $options: 'i' } },
-        { 'personalInfo.email':     { $regex: searchTerm, $options: 'i' } },
-        { 'qrCode.code':            { $regex: searchTerm, $options: 'i' } }
+        { 'personalInfo.firstName': regexOptions },
+        { 'personalInfo.lastName':  regexOptions },
+        { 'personalInfo.email':     regexOptions },
+        { 'qrCode.code':            regexOptions },
+        { 'personalInfo.firstName': flexRegex }, // fallback for flex
+        { 'personalInfo.lastName':  flexRegex },
+        { 
+          $expr: {
+             $regexMatch: {
+                input: { $concat: ["$personalInfo.firstName", " ", "$personalInfo.lastName"] },
+                regex: searchTerm,
+                options: "i"
+             }
+          }
+        }
       ]
     }).limit(20);
 

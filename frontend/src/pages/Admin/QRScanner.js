@@ -330,10 +330,19 @@ export default function QRScanner() {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      console.log("🔍 Searching for:", searchTerm);
+      // If the user scanned the raw QR code, it might be a full URL like:
+      // https://domain.com/admin/student-qr/86ce797e5...
+      // Extract just the hash at the end.
+      let query = searchTerm.trim();
+      if (query.includes('/admin/student-qr/')) {
+        const parts = query.split('/admin/student-qr/');
+        query = parts[1].split('/')[0].split('?')[0]; // Get the ID segment
+      }
+      
+      console.log("🔍 Searching for:", query);
       console.log("Token present:", !!token);
       const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
-      const response = await fetch(`${API_BASE}/api/student-profile/admin/search/${searchTerm}`, {
+      const response = await fetch(`${API_BASE}/api/student-profile/admin/search/${encodeURIComponent(query)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
