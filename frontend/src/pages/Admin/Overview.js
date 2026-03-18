@@ -20,8 +20,8 @@ const Overview = () => {
   const fetchData = async () => {
     try {
       const [statsRes, appsRes] = await Promise.all([
-        axios.get('/api/student/dashboard/stats'),
-        axios.get('/api/student/applications?limit=5')
+        axios.get('/api/admin/dashboard/stats'),
+        axios.get('/api/admin/applications?limit=5')
       ]);
       setStats(statsRes.data);
       setRecentApplications(appsRes.data.slice(0, 5));

@@ -16,7 +16,14 @@ router.get('/dashboard/stats', async (req, res) => {
     const totalRecruiters = await User.countDocuments({ role: 'recruiter' });
     const totalJobs = await Job.countDocuments();
     const activeJobs = await Job.countDocuments({ status: 'active', isApproved: true });
+    
+    // Application stats
     const totalApplications = await Application.countDocuments();
+    const pendingApplications = await Application.countDocuments({ status: 'pending' });
+    const shortlisted = await Application.countDocuments({ status: 'shortlisted' });
+    const selected = await Application.countDocuments({ status: 'selected' });
+    
+    // Other admin metrics
     const pendingApprovals = await User.countDocuments({ 
       role: 'recruiter', 
       isApproved: false 
@@ -29,7 +36,11 @@ router.get('/dashboard/stats', async (req, res) => {
       totalRecruiters,
       totalJobs,
       activeJobs,
+      availableJobs: activeJobs, // Added for frontend compatibility
       totalApplications,
+      pendingApplications,     // Added for frontend compatibility
+      shortlisted,             // Added for frontend compatibility
+      selected,                // Added for frontend compatibility
       pendingApprovals,
       pendingJobs,
       upcomingDrives
