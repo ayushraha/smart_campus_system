@@ -128,6 +128,9 @@ export default function LandingPage() {
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section className="lp-hero" ref={heroRef}>
+        <div className="lp-hero-bg" />
+        <div className="lp-hero-overlay" />
+
         {/* Animated background orbs */}
         <div className="lp-orb lp-orb-1" style={{ transform: `translate(${mousePos.x * 0.5}px, ${mousePos.y * 0.5}px)` }} />
         <div className="lp-orb lp-orb-2" style={{ transform: `translate(${-mousePos.x * 0.3}px, ${-mousePos.y * 0.3}px)` }} />
