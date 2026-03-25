@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiGithub, FiLinkedin } from 'react-icons/fi';
 import './LandingPage.css';
 
 const STATS = [
@@ -347,35 +346,6 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Developer Profile ───────────────────────────────────────────── */}
-      <section className="lp-developer" id="developer" data-animate>
-        <div className="lp-container">
-          <div className="lp-dev-card">
-            <div className="lp-dev-image-box">
-              <img src="/developer_profile.jpg" alt="Aayush Raha" className="lp-dev-avatar" />
-              <div className="lp-dev-glow" />
-            </div>
-            <div className="lp-dev-info">
-              <div className="lp-section-badge">👨‍💻 Meet the Developer</div>
-              <h2 className="lp-section-title">Aayush Raha</h2>
-              <div className="lp-dev-subtitle">Full-Stack MERN Developer</div>
-              <p className="lp-dev-bio">
-                Passionate about building scalable web applications and solving real-world problems. 
-                I developed the <strong>Smart Campus Recruitment System</strong> from scratch to bridge the gap between students, placement officers, and recruiters — streamlining the entire hiring process with the power of modern web technologies and AI.
-              </p>
-              <div className="lp-dev-socials">
-                <a href="https://github.com/ayushraha" target="_blank" rel="noreferrer" className="lp-social-btn github">
-                  <FiGithub /> GitHub
-                </a>
-                <a href="https://linkedin.com/in/aayushraha" target="_blank" rel="noreferrer" className="lp-social-btn linkedin">
-                  <FiLinkedin /> LinkedIn
-                </a>
-              </div>
-            </div>
           </div>
         </div>
       </section>
