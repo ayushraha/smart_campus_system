@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FiHome, FiUsers, FiBriefcase, FiFileText, FiLogOut, FiBarChart2 } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBriefcase, FiFileText, FiLogOut, FiBarChart2, FiPieChart } from 'react-icons/fi';
 import { QrCode } from 'lucide-react'; // ADD QrCode import
 import './Admin.css';
 
@@ -11,6 +11,7 @@ import Jobs from './Jobs';
 import Applications from './Applications';
 import Reports from './Reports';
 import QRScanner from './QRScanner'; // ADD THIS IMPORT
+import PlacementAnalytics from './PlacementAnalytics';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -67,6 +68,14 @@ const Dashboard = () => {
             <FiBarChart2 /> Reports
           </Link>
 
+          <Link 
+            to="/admin/analytics" 
+            className={activeTab === 'analytics' ? 'active' : ''}
+            onClick={() => setActiveTab('analytics')}
+          >
+            <FiPieChart /> Analytics
+          </Link>
+
           {/* ADD THIS NEW LINK */}
           <Link 
             to="/admin/qr-scanner" 
@@ -91,6 +100,7 @@ const Dashboard = () => {
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/applications" element={<Applications />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/analytics" element={<PlacementAnalytics />} />
           
           {/* ADD THIS NEW ROUTE */}
           <Route path="/qr-scanner" element={<QRScanner />} />

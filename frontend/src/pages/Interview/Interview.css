@@ -779,8 +779,28 @@
   color: #3b82f6;
 }
 
-.ai-summary,
-.detailed-feedback,
+.ai-summary, .detailed-feedback {
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+.markdown-container ul, .markdown-container ol {
+  margin: 15px 0;
+  padding-left: 20px;
+}
+
+.markdown-container li {
+  margin-bottom: 8px;
+}
+
+.markdown-container p {
+  margin-bottom: 12px;
+}
+
+.markdown-container strong {
+  color: #111827;
+}
+
 .interviewer-notes {
   line-height: 1.8;
   color: #555;

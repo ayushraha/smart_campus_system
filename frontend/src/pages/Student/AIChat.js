@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './AIChat.css';
 import { MessageCircle, Send, Trash2, Plus, Loader } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const AIChat = () => {
   const [conversations, setConversations] = useState([]);
@@ -395,7 +397,15 @@ const AIChat = () => {
                     {msg.sender === 'user' ? '👤' : '🤖'}
                   </div>
                   <div className="message-content">
-                    <p className="message-text">{msg.message}</p>
+                    <div className="message-text">
+                      {msg.sender === 'ai' ? (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {msg.message}
+                        </ReactMarkdown>
+                      ) : (
+                        <p>{msg.message}</p>
+                      )}
+                    </div>
                     <small className="message-time">
                       {new Date(msg.timestamp).toLocaleTimeString()}
                     </small>

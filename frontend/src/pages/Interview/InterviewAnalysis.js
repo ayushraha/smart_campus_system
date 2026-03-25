@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FiArrowLeft, FiDownload, FiRefreshCw } from 'react-icons/fi';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './Interview.css';
 
 const InterviewAnalysis = () => {
@@ -341,14 +343,22 @@ const InterviewAnalysis = () => {
           {analysis.aiSummary && (
             <div className="analysis-card full-width">
               <h3>AI Summary</h3>
-              <p className="ai-summary">{analysis.aiSummary}</p>
+              <div className="ai-summary markdown-container">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {analysis.aiSummary}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
 
           {analysis.detailedFeedback && (
             <div className="analysis-card full-width">
               <h3>Detailed Feedback</h3>
-              <p className="detailed-feedback">{analysis.detailedFeedback}</p>
+              <div className="detailed-feedback markdown-container">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {analysis.detailedFeedback}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
         </>
