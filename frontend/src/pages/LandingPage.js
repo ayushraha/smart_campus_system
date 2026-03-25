@@ -351,7 +351,7 @@ export default function LandingPage() {
 
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── Testimonials ────────────────────────────────────────────────── */}
       <motion.section 
