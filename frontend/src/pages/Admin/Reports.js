@@ -80,15 +80,17 @@ const Reports = () => {
           <tbody>
             {placements.map((placement) => (
               <tr key={placement._id}>
-                <td>{placement.studentId?.name}</td>
-                <td>{placement.studentId?.email}</td>
+                <td>{placement.studentId?.name || <em style={{color:'#aaa'}}>Deleted User</em>}</td>
+                <td>{placement.studentId?.email || <em style={{color:'#aaa'}}>N/A</em>}</td>
                 <td>{placement.studentId?.studentProfile?.department || 'N/A'}</td>
-                <td>{placement.jobId?.company}</td>
-                <td>{placement.jobId?.title}</td>
+                <td>{placement.jobId?.company || '—'}</td>
+                <td>{placement.jobId?.title || <em style={{color:'#aaa'}}>Deleted Job</em>}</td>
                 <td>
-                  {placement.jobId?.salary?.min} - {placement.jobId?.salary?.max} {placement.jobId?.salary?.currency}
+                  {placement.jobId?.salary?.min && placement.jobId?.salary?.max
+                    ? `${placement.jobId.salary.min} - ${placement.jobId.salary.max} ${placement.jobId.salary.currency || 'INR'}`
+                    : '—'}
                 </td>
-                <td>{format(new Date(placement.updatedAt), 'MMM dd, yyyy')}</td>
+                <td>{placement.updatedAt ? format(new Date(placement.updatedAt), 'MMM dd, yyyy') : '—'}</td>
               </tr>
             ))}
           </tbody>

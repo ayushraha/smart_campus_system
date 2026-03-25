@@ -2,19 +2,41 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
+import { FiSearch } from 'react-icons/fi';
 
 const Applications = () => {
   const [applications, setApplications] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
     fetchApplications();
   }, []);
 
+  useEffect(() => {
+    let data = applications;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      data = data.filter(a =>
+        (a.studentId?.name || '').toLowerCase().includes(q) ||
+        (a.studentId?.email || '').toLowerCase().includes(q) ||
+        (a.jobId?.title || '').toLowerCase().includes(q) ||
+        (a.jobId?.company || '').toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter) {
+      data = data.filter(a => a.status === statusFilter);
+    }
+    setFiltered(data);
+  }, [search, statusFilter, applications]);
+
   const fetchApplications = async () => {
     try {
       const response = await axios.get('/api/admin/applications');
       setApplications(response.data);
+      setFiltered(response.data);
     } catch (error) {
       toast.error('Error fetching applications');
     } finally {
@@ -26,7 +48,31 @@ const Applications = () => {
 
   return (
     <div className="applications-page">
-      <h1>All Applications</h1>
+      <div className="page-header">
+        <h1>All Applications</h1>
+        <span style={{ color: '#888', fontSize: 14 }}>{filtered.length} records</span>
+      </div>
+
+      {/* Search & Filter */}
+      <div className="filters">
+        <div className="search-box">
+          <FiSearch />
+          <input
+            type="text"
+            placeholder="Search by student, email, job or company..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="shortlisted">Shortlisted</option>
+          <option value="interview">Interview</option>
+          <option value="selected">Selected</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
 
       <div className="table-container">
         <table className="data-table">
@@ -41,27 +87,33 @@ const Applications = () => {
             </tr>
           </thead>
           <tbody>
-            {applications.map((app) => (
+            {filtered.map((app) => (
               <tr key={app._id}>
-                <td>{app.studentId?.name}</td>
-                <td>{app.studentId?.email}</td>
-                <td>{app.jobId?.title}</td>
-                <td>{app.jobId?.company}</td>
+                <td>{app.studentId?.name || <em style={{color:'#aaa'}}>Deleted User</em>}</td>
+                <td>{app.studentId?.email || <em style={{color:'#aaa'}}>N/A</em>}</td>
+                <td>{app.jobId?.title || <em style={{color:'#aaa'}}>Deleted Job</em>}</td>
+                <td>{app.jobId?.company || '—'}</td>
                 <td>
                   <span className={`badge ${app.status}`}>{app.status}</span>
                 </td>
-                <td>{format(new Date(app.appliedDate), 'MMM dd, yyyy')}</td>
+                <td>
+                  {app.appliedDate
+                    ? format(new Date(app.appliedDate), 'MMM dd, yyyy')
+                    : '—'}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {applications.length === 0 && (
-          <div className="no-data">No applications found</div>
+        {filtered.length === 0 && (
+          <div className="no-data">
+            {applications.length === 0 ? 'No applications found' : 'No results match your search'}
+          </div>
         )}
       </div>
     </div>
   );
 };
 
-export default Applications;
+export default Applications;
