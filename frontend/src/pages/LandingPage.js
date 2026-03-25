@@ -128,7 +128,7 @@ export default function LandingPage() {
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section className="lp-hero" ref={heroRef}>
-        <div className="lp-hero-bg" />
+        <div className="lp-hero-bg" style={{ backgroundImage: "url('/college_bg.jpg')" }} />
         <div className="lp-hero-overlay" />
 
         {/* Animated background orbs */}
