@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import Tilt from 'react-parallax-tilt';
+import Hero3DScene from '../components/Hero3DScene';
 import './LandingPage.css';
 
 const STATS = [
@@ -90,16 +93,17 @@ export default function LandingPage() {
     return () => window.removeEventListener('mousemove', handleMouse);
   }, []);
 
-  // Intersection observer for scroll animations
+  // Intersection observer for legacy elements (if any)
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      () => {},
-      { threshold: 0.1 }
-    );
-
+    const observer = new IntersectionObserver(() => {}, { threshold: 0.1 });
     document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
     return () => observer.disconnect();
   }, []);
+
+  const scrollVariant = {
+    hidden: { opacity: 0, y: 80, rotateX: 10, scale: 0.95 },
+    visible: { opacity: 1, y: 0, rotateX: 0, scale: 1, transition: { duration: 0.8, ease: "easeOut" } }
+  };
 
   return (
     <div className="lp-root">
@@ -127,9 +131,12 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="lp-hero" ref={heroRef}>
+      <section className="lp-hero" ref={heroRef} style={{ perspective: '1000px' }}>
         <div className="lp-hero-bg" style={{ backgroundImage: "url('/college_bg.jpg')" }} />
         <div className="lp-hero-overlay" />
+        
+        {/* Render True WebGL 3D Object Core */}
+        <Hero3DScene />
 
         {/* Animated background orbs */}
         <div className="lp-orb lp-orb-1" style={{ transform: `translate(${mousePos.x * 0.5}px, ${mousePos.y * 0.5}px)` }} />
@@ -207,21 +214,31 @@ export default function LandingPage() {
         </div>
         <div className="lp-stripe-badge">Official Placement Portal</div>
       </div>
-      <section className="lp-stats" id="stats" data-animate>
+      <motion.section 
+        className="lp-stats" id="stats"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+        variants={scrollVariant}
+      >
         <div className="lp-container">
           <div className="lp-stats-grid">
             {STATS.map((s, i) => (
-              <div key={i} className="lp-stat-card">
-                <div className="lp-stat-value">{s.value}</div>
-                <div className="lp-stat-label">{s.label}</div>
-              </div>
+              <Tilt key={i} tiltReverse={true} glareEnable={true} glareMaxOpacity={0.1} scale={1.05} transitionSpeed={2500}>
+                <div className="lp-stat-card" style={{ height: '100%' }}>
+                  <div className="lp-stat-value">{s.value}</div>
+                  <div className="lp-stat-label">{s.label}</div>
+                </div>
+              </Tilt>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── Features ────────────────────────────────────────────────────── */}
-      <section className="lp-features" id="features" data-animate>
+      <motion.section 
+        className="lp-features" id="features"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+        variants={scrollVariant}
+      >
         <div className="lp-container">
           <div className="lp-section-badge">✨ Everything You Need</div>
           <h2 className="lp-section-title">Built for every step of your placement journey</h2>
@@ -229,45 +246,56 @@ export default function LandingPage() {
 
           <div className="lp-features-grid">
             {FEATURES.map((f, i) => (
-              <div
-                key={i}
-                className="lp-feature-card"
-                style={{ '--card-color': f.color, '--card-glow': f.glow, animationDelay: `${i * 0.1}s` }}
-              >
-                <div className="lp-feature-icon-wrap">
-                  <span className="lp-feature-icon">{f.icon}</span>
-                  <div className="lp-feature-glow" />
+              <Tilt key={i} tiltReverse={true} glareEnable={true} glareMaxOpacity={0.15} glarePosition="all" scale={1.02} transitionSpeed={2000}>
+                <div
+                  className="lp-feature-card"
+                  style={{ '--card-color': f.color, '--card-glow': f.glow, height: '100%' }}
+                >
+                  <div className="lp-feature-icon-wrap">
+                    <span className="lp-feature-icon">{f.icon}</span>
+                    <div className="lp-feature-glow" />
+                  </div>
+                  <h3 className="lp-feature-title">{f.title}</h3>
+                  <p className="lp-feature-desc">{f.desc}</p>
+                  <div className="lp-feature-arrow">→</div>
                 </div>
-                <h3 className="lp-feature-title">{f.title}</h3>
-                <p className="lp-feature-desc">{f.desc}</p>
-                <div className="lp-feature-arrow">→</div>
-              </div>
+              </Tilt>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── How It Works ────────────────────────────────────────────────── */}
-      <section className="lp-hiw" id="how-it-works" data-animate>
+      <motion.section 
+        className="lp-hiw" id="how-it-works"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+        variants={scrollVariant}
+      >
         <div className="lp-container">
           <div className="lp-section-badge">🗺️ The Journey</div>
           <h2 className="lp-section-title">From signup to offer in 4 simple steps</h2>
 
           <div className="lp-hiw-grid">
             {HOW_IT_WORKS.map((h, i) => (
-              <div key={i} className="lp-hiw-card" style={{ animationDelay: `${i * 0.15}s` }}>
-                <div className="lp-hiw-step">{h.step}</div>
-                <div className="lp-hiw-connector" />
-                <h3 className="lp-hiw-title">{h.title}</h3>
-                <p className="lp-hiw-desc">{h.desc}</p>
-              </div>
+              <Tilt key={i} tiltReverse={true} glareEnable={true} glareMaxOpacity={0.05} scale={1.05} transitionSpeed={2500}>
+                <div className="lp-hiw-card" style={{ height: '100%' }}>
+                  <div className="lp-hiw-step">{h.step}</div>
+                  <div className="lp-hiw-connector" />
+                  <h3 className="lp-hiw-title">{h.title}</h3>
+                  <p className="lp-hiw-desc">{h.desc}</p>
+                </div>
+              </Tilt>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── JSPM College Info Section ──────────────────────────────────── */}
-      <section className="lp-college-section">
+      <motion.section 
+        className="lp-college-section"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+        variants={scrollVariant}
+      >
         <div className="lp-college-bg-orb" />
         <div className="lp-container">
           <div className="lp-college-grid">
@@ -326,43 +354,55 @@ export default function LandingPage() {
       </section>
 
       {/* ── Testimonials ────────────────────────────────────────────────── */}
-      <section className="lp-testimonials" id="testimonials" data-animate>
+      <motion.section 
+        className="lp-testimonials" id="testimonials"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+        variants={scrollVariant}
+      >
         <div className="lp-container">
           <div className="lp-section-badge">💬 Success Stories</div>
           <h2 className="lp-section-title">Students who made it happen</h2>
 
           <div className="lp-testi-grid">
             {TESTIMONIALS.map((t, i) => (
-              <div key={i} className="lp-testi-card" style={{ animationDelay: `${i * 0.15}s` }}>
-                <div className="lp-testi-quote">"</div>
-                <p className="lp-testi-text">{t.text}</p>
-                <div className="lp-testi-person">
-                  <span className="lp-testi-avatar">{t.avatar}</span>
-                  <div>
-                    <div className="lp-testi-name">{t.name}</div>
-                    <div className="lp-testi-role">{t.role}</div>
+              <Tilt key={i} tiltReverse={true} glareEnable={true} glareMaxOpacity={0.15} scale={1.03} transitionSpeed={2000}>
+                <div className="lp-testi-card" style={{ height: '100%' }}>
+                  <div className="lp-testi-quote">"</div>
+                  <p className="lp-testi-text">{t.text}</p>
+                  <div className="lp-testi-person">
+                    <span className="lp-testi-avatar">{t.avatar}</span>
+                    <div>
+                      <div className="lp-testi-name">{t.name}</div>
+                      <div className="lp-testi-role">{t.role}</div>
+                    </div>
+                    <div className="lp-testi-company">{t.company}</div>
                   </div>
-                  <div className="lp-testi-company">{t.company}</div>
                 </div>
-              </div>
+              </Tilt>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── CTA ─────────────────────────────────────────────────────────── */}
-      <section className="lp-cta">
+      <motion.section 
+        className="lp-cta"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+        variants={scrollVariant}
+      >
         <div className="lp-cta-orb lp-cta-orb-1" />
         <div className="lp-cta-orb lp-cta-orb-2" />
         <div className="lp-container lp-cta-inner">
           <h2 className="lp-cta-title">Your dream company is waiting.<br />Are you ready?</h2>
           <p className="lp-cta-sub">Join thousands of students who use Smart Campus Recruitment System to land offers at top companies.</p>
-          <button className="lp-btn-cta" onClick={() => navigate('/register')}>
-            Create Free Account →
-          </button>
+          <Tilt scale={1.05} transitionSpeed={2500} style={{ display: 'inline-block' }}>
+            <button className="lp-btn-cta" onClick={() => navigate('/register')}>
+              Create Free Account →
+            </button>
+          </Tilt>
           <p className="lp-cta-note">No credit card required · Free forever for students</p>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <footer className="lp-footer">

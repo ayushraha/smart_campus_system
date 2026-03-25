@@ -361,7 +361,7 @@
   border: 1px solid rgba(255,255,255,0.06);
   transition: transform 0.2s;
 }
-.lp-stat-card:hover { transform: translateY(-4px); }
+
 .lp-stat-value {
   font-size: 36px;
   font-weight: 900;
@@ -431,7 +431,6 @@
 }
 .lp-feature-card:hover {
   border-color: var(--card-color);
-  transform: translateY(-6px) scale(1.01);
   box-shadow: 0 16px 48px var(--card-glow);
 }
 .lp-feature-card:hover::before { opacity: 1; }
@@ -540,7 +539,6 @@
 }
 .lp-testi-card:hover {
   border-color: rgba(99,102,241,0.3);
-  transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(99,102,241,0.15);
 }
 .lp-testi-quote { font-size: 56px; color: rgba(99,102,241,0.2); line-height: 1; margin-bottom: 8px; font-family: Georgia, serif; }
@@ -621,7 +619,9 @@
   transition: all 0.3s;
   animation: gradientShift 3s ease infinite;
 }
-.lp-btn-cta:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 60px rgba(99,102,241,0.7); }
+.lp-btn-cta:hover {
+  box-shadow: 0 12px 60px rgba(99,102,241,0.7);
+}
 @keyframes gradientShift {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
