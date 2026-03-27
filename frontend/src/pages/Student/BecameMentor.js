@@ -21,6 +21,18 @@ const BecameMentor = () => {
   const [error, setError] = useState('');
   const [currentSkill, setCurrentSkill] = useState('');
   const [currentSpec, setCurrentSpec] = useState('');
+  const [alreadyMentor, setAlreadyMentor] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  // Check if they are already a mentor on mount
+  React.useEffect(() => {
+    mentorApi.checkIfMentor().then(isMentor => {
+      if (isMentor) {
+        setAlreadyMentor(true);
+      }
+      setCheckingStatus(false);
+    }).catch(() => setCheckingStatus(false));
+  }, []);
 
   const allSkills = [
     'DSA', 'System Design', 'Web Development', 'Python', 'Java',
@@ -112,6 +124,26 @@ const BecameMentor = () => {
       setLoading(false);
     }
   };
+
+  if (checkingStatus) {
+    return <div className="became-mentor" style={{ textAlign:'center', padding:'100px', color:'white' }}>Loading...</div>;
+  }
+
+  if (alreadyMentor) {
+    return (
+      <div className="success-container">
+        <div className="success-card">
+          <CheckCircle size={60} className="success-icon" />
+          <h1>You're Already a Mentor!</h1>
+          <p>You have already registered your mentor profile.</p>
+          <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <button onClick={() => window.location.href = '/student/mentorship'} className="submit-btn" style={{width:'auto'}}>Go to Hub</button>
+            <button onClick={() => window.location.href = '/student/mentor-inbox'} className="submit-btn" style={{width:'auto', background:'transparent', border:'1px solid white'}}>Mentor Inbox</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (
