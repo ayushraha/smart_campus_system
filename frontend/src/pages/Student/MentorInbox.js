@@ -1,186 +1,211 @@
-// ================================================================
-// frontend/src/pages/Student/MentorInbox.js
-// Dashboard for mentors to see student messages and reply
-// ================================================================
-
-import React, { useState, useEffect } from 'react';
-import { Mail, Send, Clock, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { FiMail, FiSend, FiMessageCircle, FiUser, FiX, FiInbox } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
-import { mentorApi } from '../../services/mentorApi';
+import api from '../../services/api';
 import './MentorInbox.css';
 
 const MentorInbox = () => {
   const { user } = useAuth();
-  const [mentor, setMentor] = useState(null);
+  const [mentor, setMentor]               = useState(null);
   const [conversations, setConversations] = useState([]);
-  const [selectedStudentId, setSelectedStudentId] = useState(null);
-  const [selectedMessages, setSelectedMessages] = useState([]);
-  const [replyText, setReplyText] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
+  const [selected, setSelected]           = useState(null); // { studentId, studentName }
+  const [messages, setMessages]           = useState([]);
+  const [replyText, setReplyText]         = useState('');
+  const [loading, setLoading]             = useState(true);
+  const [msgLoading, setMsgLoading]       = useState(false);
+  const [sending, setSending]             = useState(false);
+  const [error, setError]                 = useState('');
+  const chatEndRef                        = useRef(null);
 
-  // On load, get mentor info and messages
-  useEffect(() => {
-    fetchMentorData();
-  }, []);
+  // Auto-scroll
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const fetchMentorData = async () => {
+  const fetchInboxData = useCallback(async () => {
+    setLoading(true); setError('');
     try {
-      setLoading(true);
-      // Get current user's mentor profile
-      const mentorData = await mentorApi.getMentorProfile(user?.mentorId);
-      setMentor(mentorData);
+      // 1. Get the current user's mentor profile
+      const mentorRes = await api.get('/mentor/check-status');
+      const mentorProfile = mentorRes.data?.mentor;
+      if (!mentorProfile) { setError('You are not registered as a mentor.'); setLoading(false); return; }
+      setMentor(mentorProfile);
 
-      // TODO: Fetch all conversations for this mentor
-      // This requires a new backend endpoint
-      await fetchConversations();
-    } catch (error) {
-      console.error('Error fetching mentor data:', error);
+      // 2. Get all conversations (grouped by student)
+      const convRes = await api.get(`/mentor-messages/inbox/${mentorProfile._id}`);
+      setConversations(convRes.data || []);
+    } catch (err) {
+      setError('Could not load inbox. Make sure you are registered as a mentor.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchConversations = async () => {
+  useEffect(() => { fetchInboxData(); }, [fetchInboxData]);
+
+  const openThread = async (conv) => {
+    setSelected(conv);
+    setMsgLoading(true);
     try {
-      // This would be a new API endpoint
-      // GET /api/mentor/:mentorId/conversations
-      // Returns all unique students who messaged this mentor
-      // With their latest message
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-    }
+      const res = await api.get(`/mentor-messages/thread/${mentor._id}/${conv.studentId}`);
+      setMessages(res.data || []);
+    } catch { setMessages([]); }
+    finally { setMsgLoading(false); }
   };
 
-  const handleSelectConversation = async (studentId) => {
-    setSelectedStudentId(studentId);
-    try {
-      // Fetch all messages with this student
-      const messages = await mentorApi.getMessages(mentor._id, studentId);
-      setSelectedMessages(messages || []);
-    } catch (error) {
-      console.error('Error loading conversation:', error);
-    }
-  };
-
-  const handleSendReply = async () => {
-    if (!replyText.trim() || !selectedStudentId) return;
-
+  const sendReply = async (e) => {
+    e.preventDefault();
+    if (!replyText.trim() || !selected || sending) return;
+    const text = replyText.trim();
+    setReplyText('');
     setSending(true);
+    // Optimistic
+    setMessages(prev => [...prev, { _id: Date.now(), sender: 'mentor', content: text, createdAt: new Date() }]);
     try {
-      // Send mentor response
-      await mentorApi.sendMentorResponse(
-        selectedStudentId,
-        mentor._id,
-        replyText
-      );
+      await api.post('/mentor-messages/mentor-response', {
+        studentId: selected.studentId,
+        mentorId:  mentor._id,
+        content:   text
+      });
+      // Refresh conversations for updated preview
+      const convRes = await api.get(`/mentor-messages/inbox/${mentor._id}`);
+      setConversations(convRes.data || []);
+    } catch { /* show toast if needed */ }
+    setSending(false);
+  };
 
-      // Reload conversation
-      await handleSelectConversation(selectedStudentId);
-      setReplyText('');
-    } catch (error) {
-      console.error('Error sending reply:', error);
-      alert('Failed to send reply');
-    } finally {
-      setSending(false);
-    }
+  const formatTime = (d) => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatDate = (d) => {
+    const date = new Date(d);
+    const today = new Date();
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
   if (loading) {
-    return <div className="mentor-inbox"><p>Loading...</p></div>;
+    return (
+      <div className="mi-root mi-loading-page">
+        <div className="mi-spinner" />
+        <p>Loading your inbox...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mi-root mi-error-page">
+        <span className="mi-error-icon">⚠️</span>
+        <p>{error}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="mentor-inbox">
-      {/* Header */}
-      <div className="inbox-header">
-        <h1>
-          <Mail size={28} />
-          Mentor Inbox
-        </h1>
-        <p>Messages from students</p>
+    <div className="mi-root">
+      {/* ── Header ──────────────────────────────────────────── */}
+      <div className="mi-header">
+        <div>
+          <h1 className="mi-title"><FiInbox /> Mentor Inbox</h1>
+          <p className="mi-subtitle">
+            {mentor?.name ? `Signed in as ${mentor.name} · ${mentor.company}` : 'Messages from your students'}
+          </p>
+        </div>
+        <div className="mi-badge">{conversations.length} Conversation{conversations.length !== 1 ? 's' : ''}</div>
       </div>
 
-      <div className="inbox-container">
-        {/* Conversations List */}
-        <div className="conversations-panel">
-          <h2>Conversations</h2>
+      {/* ── Two-column layout ───────────────────────────────── */}
+      <div className="mi-layout">
+
+        {/* Left: Conversations list */}
+        <div className="mi-conv-panel">
+          <div className="mi-conv-header">
+            <FiMessageCircle /> Students
+          </div>
+
           {conversations.length === 0 ? (
-            <div className="empty-conversations">
+            <div className="mi-conv-empty">
+              <FiMail size={32} />
               <p>No messages yet</p>
+              <span>When students message you, they'll appear here.</span>
             </div>
           ) : (
-            conversations.map((conv) => (
+            conversations.map(conv => (
               <div
                 key={conv.studentId}
-                className={`conversation-item ${
-                  selectedStudentId === conv.studentId ? 'active' : ''
-                }`}
-                onClick={() => handleSelectConversation(conv.studentId)}
+                className={`mi-conv-item ${selected?.studentId === conv.studentId ? 'active' : ''}`}
+                onClick={() => openThread(conv)}
               >
-                <div className="conv-avatar">{conv.studentName.charAt(0)}</div>
-                <div className="conv-content">
-                  <h4>{conv.studentName}</h4>
-                  <p className="conv-preview">{conv.lastMessage}</p>
+                <div className="mi-conv-avatar">
+                  {conv.studentName?.charAt(0)?.toUpperCase() || '?'}
                 </div>
-                <div className="conv-time">{conv.lastMessageTime}</div>
+                <div className="mi-conv-content">
+                  <div className="mi-conv-name">{conv.studentName}</div>
+                  <div className="mi-conv-preview">{conv.lastMessage}</div>
+                </div>
+                <div className="mi-conv-right">
+                  <div className="mi-conv-time">{formatDate(conv.lastMessageTime)}</div>
+                  {conv.unread > 0 && <div className="mi-unread-badge">{conv.unread}</div>}
+                </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Messages Panel */}
-        <div className="messages-panel">
-          {selectedStudentId ? (
+        {/* Right: Thread view */}
+        <div className="mi-thread-panel">
+          {!selected ? (
+            <div className="mi-thread-empty">
+              <FiUser size={40} />
+              <h3>Select a conversation</h3>
+              <p>Choose a student from the left to view their messages and reply.</p>
+            </div>
+          ) : (
             <>
-              {/* Messages */}
-              <div className="messages-list">
-                {selectedMessages.length === 0 ? (
-                  <div className="empty-messages">
-                    <p>No messages in this conversation</p>
-                  </div>
-                ) : (
-                  selectedMessages.map((msg) => (
-                    <div
-                      key={msg._id}
-                      className={`message-item ${msg.sender}`}
-                    >
-                      <div className="msg-sender">
-                        {msg.sender === 'student' ? 'Student' : 'You'}
-                      </div>
-                      <div className="msg-body">{msg.content}</div>
-                      <div className="msg-time">
-                        {new Date(msg.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                  ))
-                )}
+              {/* Thread Header */}
+              <div className="mi-thread-header">
+                <div className="mi-thread-avatar">{selected.studentName?.charAt(0)?.toUpperCase()}</div>
+                <div>
+                  <div className="mi-thread-name">{selected.studentName}</div>
+                  <div className="mi-thread-sub">{selected.studentEmail}</div>
+                </div>
+                <button className="mi-thread-close" onClick={() => setSelected(null)}><FiX /></button>
               </div>
 
-              {/* Reply Area */}
-              <div className="reply-area">
-                <textarea
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Type your reply..."
-                  rows="3"
-                  disabled={sending}
-                />
-                <button
-                  onClick={handleSendReply}
-                  disabled={!replyText.trim() || sending}
-                  className="btn-send-reply"
-                >
-                  <Send size={20} />
-                  {sending ? 'Sending...' : 'Send Reply'}
-                </button>
+              {/* Messages */}
+              <div className="mi-messages">
+                {msgLoading && (
+                  <div className="mi-msg-loading">
+                    <div className="mi-spinner" /> Loading messages...
+                  </div>
+                )}
+                {!msgLoading && messages.length === 0 && (
+                  <div className="mi-thread-empty mi-msg-empty">
+                    <p>No messages in this thread yet.</p>
+                  </div>
+                )}
+                {!msgLoading && messages.map((msg, i) => (
+                  <div key={msg._id || i} className={`mi-msg ${msg.sender === 'mentor' ? 'mi-msg-mine' : 'mi-msg-theirs'}`}>
+                    <div className="mi-msg-label">{msg.sender === 'mentor' ? 'You' : selected.studentName}</div>
+                    <div className="mi-msg-bubble">{msg.content}</div>
+                    <div className="mi-msg-time">{formatTime(msg.createdAt)}</div>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
               </div>
+
+              {/* Reply */}
+              <form className="mi-reply-form" onSubmit={sendReply}>
+                <textarea
+                  className="mi-reply-input"
+                  value={replyText}
+                  onChange={e => setReplyText(e.target.value)}
+                  placeholder={`Reply to ${selected.studentName}...`}
+                  rows={3}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(e); } }}
+                />
+                <button type="submit" className="mi-reply-btn" disabled={!replyText.trim() || sending}>
+                  <FiSend /> {sending ? 'Sending...' : 'Send Reply'}
+                </button>
+              </form>
             </>
-          ) : (
-            <div className="no-conversation-selected">
-              <AlertCircle size={48} />
-              <p>Select a conversation to view messages</p>
-            </div>
           )}
         </div>
       </div>

@@ -7,23 +7,86 @@ const User = require('../models/User');
 
 
 // ===============================
-// GET: Get all chat messages between mentor & student
+// GET: Student views their chat with a mentor
 // ===============================
 router.get('/chat/:mentorId', auth, async (req, res) => {
   try {
     const mentorId = req.params.mentorId;
-
-    // Verify mentor exists
     const mentor = await Mentor.findById(mentorId);
-    if (!mentor) {
-      return res.status(404).json({ message: 'Mentor not found' });
-    }
+    if (!mentor) return res.status(404).json({ message: 'Mentor not found' });
 
-    // Fetch all messages between this student and mentor
+    // Fetch all messages between THIS student and the mentor
     const messages = await MentorMessage.find({
       mentorId,
       studentId: req.user.id
     }).sort({ createdAt: 1 });
+
+    res.status(200).json(messages);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ===============================
+// GET: Mentor views all conversations (grouped by student)
+// ===============================
+router.get('/inbox/:mentorId', auth, async (req, res) => {
+  try {
+    const mentorId = req.params.mentorId;
+
+    // Verify the mentor exists and belongs to this user
+    const mentor = await Mentor.findById(mentorId);
+    if (!mentor) return res.status(404).json({ message: 'Mentor not found' });
+    if (mentor.userId.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Get all messages for this mentor, populated with student info
+    const messages = await MentorMessage.find({ mentorId })
+      .populate('studentId', 'name email')
+      .sort({ createdAt: -1 });
+
+    // Group by student to build conversation list
+    const convMap = {};
+    messages.forEach(msg => {
+      const sId = msg.studentId?._id?.toString();
+      if (!sId) return;
+      if (!convMap[sId]) {
+        convMap[sId] = {
+          studentId:   sId,
+          studentName: msg.studentId?.name || 'Unknown Student',
+          studentEmail: msg.studentId?.email || '',
+          lastMessage: msg.content,
+          lastMessageTime: msg.createdAt,
+          unread: 0
+        };
+      }
+      if (msg.sender === 'student' && !msg.isRead) convMap[sId].unread++;
+    });
+
+    res.status(200).json(Object.values(convMap));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ===============================
+// GET: Mentor views one student's full conversation
+// ===============================
+router.get('/thread/:mentorId/:studentId', auth, async (req, res) => {
+  try {
+    const { mentorId, studentId } = req.params;
+
+    const mentor = await Mentor.findById(mentorId);
+    if (!mentor) return res.status(404).json({ message: 'Mentor not found' });
+    if (mentor.userId.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const messages = await MentorMessage.find({ mentorId, studentId })
+      .sort({ createdAt: 1 });
 
     res.status(200).json(messages);
   } catch (error) {

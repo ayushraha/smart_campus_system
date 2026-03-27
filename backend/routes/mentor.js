@@ -22,6 +22,21 @@ router.get('/discover', async (req, res) => {
   }
 });
 
+// ==========================
+// GET: Check Mentor Status (returns current user's mentor profile if exists)
+// ==========================
+router.get('/check-status', auth, async (req, res) => {
+  try {
+    const mentor = await Mentor.findOne({ userId: req.user.id });
+    if (!mentor) {
+      return res.status(200).json({ isMentor: false });
+    }
+    return res.status(200).json({ isMentor: true, mentor });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 // ==========================
 // GET: Mentor Profile
