@@ -3,7 +3,6 @@ const router = express.Router();
 const Interview = require('../models/Interview');
 const Application = require('../models/Application');
 const { auth, checkRole } = require('../middleware/auth');
-const { sendInterviewScheduledEmail, sendPlacementEmail } = require('../services/emailService');
 
 // Schedule interview (Recruiter)
 router.post('/schedule', auth, checkRole('recruiter'), async (req, res) => {
@@ -40,19 +39,6 @@ router.post('/schedule', auth, checkRole('recruiter'), async (req, res) => {
       meetingLink: mode === 'online' ? `${process.env.FRONTEND_URL}/interview/room/${interview.roomId}` : null
     };
     await application.save();
-
-    // ── Send email notification to student ──────────────────────────────
-    try {
-      const student = application.studentId;
-      const job = application.jobId;
-      await sendInterviewScheduledEmail(
-        { name: student.name, email: student.email },
-        { title: job.title, company: job.company },
-        { scheduledDate, scheduledTime, duration: duration || 30, mode, interviewDetails: application.interviewDetails }
-      );
-    } catch (emailErr) {
-      console.error('[Email] Interview notification failed:', emailErr.message);
-    }
 
     res.status(201).json({
       message: 'Interview scheduled successfully',
@@ -302,23 +288,6 @@ router.put('/:interviewId/decision', auth, checkRole('recruiter'), async (req, r
       status: result === 'selected' ? 'selected' : result === 'rejected' ? 'rejected' : 'interview',
       feedback: finalFeedback
     });
-
-    // ── Send placement email if student is selected ─────────────────────
-    if (result === 'selected') {
-      try {
-        const populatedInterview = await Interview.findById(interview._id)
-          .populate('studentId', 'name email')
-          .populate('jobId', 'title company');
-        if (populatedInterview?.studentId && populatedInterview?.jobId) {
-          await sendPlacementEmail(
-            { name: populatedInterview.studentId.name, email: populatedInterview.studentId.email },
-            { title: populatedInterview.jobId.title, company: populatedInterview.jobId.company }
-          );
-        }
-      } catch (emailErr) {
-        console.error('[Email] Placement notification failed:', emailErr.message);
-      }
-    }
 
     res.json({ message: 'Decision submitted', interview });
   } catch (error) {
