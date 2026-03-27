@@ -127,7 +127,7 @@ router.post('/send', auth, checkRole('student'), checkApproved, async (req, res)
 // ===============================
 // POST: Mentor responds to a student’s message
 // ===============================
-router.post('/mentor-response', auth, checkRole('mentor'), checkApproved, async (req, res) => {
+router.post('/mentor-response', auth, checkRole('student'), checkApproved, async (req, res) => {
   try {
     const { studentId, mentorId, content } = req.body;
 
@@ -140,6 +140,9 @@ router.post('/mentor-response', auth, checkRole('mentor'), checkApproved, async 
 
     const mentor = await Mentor.findById(mentorId);
     if (!mentor) return res.status(404).json({ message: 'Mentor not found' });
+    if (mentor.userId.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ message: 'Access denied. You are not this mentor.' });
+    }
 
     const message = new MentorMessage({
       mentorId,

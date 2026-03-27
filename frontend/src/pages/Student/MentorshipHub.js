@@ -60,7 +60,7 @@ const MentorshipHub = () => {
     setDraft('');
     setSending(true);
     // Optimistic
-    setMessages(prev => [...prev, { _id: Date.now(), content: text, senderType: 'student', createdAt: new Date() }]);
+    setMessages(prev => [...prev, { _id: Date.now(), content: text, sender: 'student', createdAt: new Date() }]);
     try {
       await mentorApi.sendMessage(chatMentor._id, text);
     } catch { /* silently fail for now */ }
@@ -204,7 +204,7 @@ const MentorshipHub = () => {
                 </div>
               )}
               {!msgLoading && messages.map((msg, i) => {
-                const isMe = msg.senderType === 'student';
+                const isMe = msg.sender === 'student';
                 return (
                   <div key={msg._id || i} className={`mh-msg ${isMe ? 'mh-msg-mine' : 'mh-msg-theirs'}`}>
                     <div className="mh-msg-bubble">{msg.content}</div>
