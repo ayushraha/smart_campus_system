@@ -129,6 +129,8 @@ const Messenger = () => {
       console.error(err);
       alert('Failed to send message.');
     }
+  };
+
   const handleDeleteMessage = async (msgId) => {
     if (!window.confirm("Delete this message for everyone?")) return;
     try {
