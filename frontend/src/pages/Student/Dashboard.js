@@ -16,12 +16,9 @@ import ResumeList from './ResumeList';
 import ResumeBuilder from './ResumeBuilder';
 import PremiumResumeParser from './PremiumResumeParser';
 import StudentProfileForm from './StudentProfileForm';
-import MentorshipHub from './MentorshipHub';
-import BecameMentor from './BecameMentor';
 import DriveCalendar from './DriveCalendar';
 import StudyGroups from './StudyGroups';
 import TrackApplications from './TrackApplications';
-import Messenger from './Messenger';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -160,32 +157,7 @@ const Dashboard = () => {
             <Zap size={20} /> Premium Resume Parser
           </Link>
 
-          {/* ✅ MENTORSHIP SECTION (NEW) */}
-          <div className="nav-section-title">🎓 Mentorship & Network</div>
 
-          <Link 
-            to="/student/mentorship" 
-            className={activeTab === 'mentorship' ? 'active' : ''}
-            onClick={() => setActiveTab('mentorship')}
-          >
-            <Award size={20} /> Mentorship Hub
-          </Link>
-
-          <Link 
-            to="/student/messages" 
-            className={activeTab === 'messages' ? 'active' : ''}
-            onClick={() => setActiveTab('messages')}
-          >
-            <MessageCircle size={20} /> Messages
-          </Link>
-
-          <Link 
-            to="/student/become-mentor" 
-            className={activeTab === 'become-mentor' ? 'active' : ''}
-            onClick={() => setActiveTab('become-mentor')}
-          >
-            <Award size={20} /> Become a Mentor
-          </Link>
         </nav>
 
         <div className="sidebar-footer">
@@ -215,10 +187,6 @@ const Dashboard = () => {
           {/* Learning Tools Routes */}
           <Route path="/premium-resume-parser" element={<PremiumResumeParser />} />
 
-          {/* Mentorship Routes */}
-          <Route path="/mentorship" element={<MentorshipHub />} />
-          <Route path="/messages" element={<Messenger />} />
-          <Route path="/become-mentor" element={<BecameMentor />} />
 
           {/* Drive Calendar */}
           <Route path="/calendar" element={<DriveCalendar />} />

@@ -15,8 +15,6 @@ import InterviewAnalysis from './pages/Interview/InterviewAnalysis';
 import './App.css';
 import AIChat from './pages/Student/AIChat';
 import PremiumResumeParser from "./pages/Student/PremiumResumeParser";
-import MentorshipHub from './pages/Student/MentorshipHub'; // ✅ NEW IMPORT
-import BecameMentor from './pages/Student/BecameMentor';
 import DriveCalendar from './pages/Student/DriveCalendar';
 import StudyGroups from './pages/Student/StudyGroups';
 import LandingPage from './pages/LandingPage';
@@ -223,24 +221,6 @@ function App() {
               } 
             />
 
-            {/* ✅ MENTORSHIP HUB ROUTES (NEW) */}
-            <Route 
-              path="/student/mentorship" 
-              element={
-                <ProtectedRoute allowedRoles={['student']}>
-                  <MentorshipHub />
-                </ProtectedRoute>
-              } 
-            />
-            
-            <Route 
-              path="/student/become-mentor" 
-              element={
-                <ProtectedRoute allowedRoles={['student']}>
-                  <BecameMentor />
-                </ProtectedRoute>
-              } 
-            />
 
             {/* Drive Calendar Route */}
             <Route 
@@ -339,29 +319,4 @@ export const PremiumResumeParserNav = () => {
     </NavLink>
   );
 };
-
-// ✅ NEW NAVIGATION COMPONENT FOR MENTORSHIP HUB
-export const MentorshipHubNav = () => {
-  return (
-    <NavLink 
-      to="/student/mentorship"
-      className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-    >
-      <Award size={20} />
-      <span>Mentorship Hub</span>
-    </NavLink>
-  );
-};
-
-// ✅ NEW NAVIGATION COMPONENT FOR BECOME MENTOR
-export const BecomeMentorNav = () => {
-  return (
-    <NavLink 
-      to="/student/become-mentor"
-      className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-    >
-      <Award size={20} />
-      <span>Become a Mentor</span>
-    </NavLink>
-  );
-};
+
