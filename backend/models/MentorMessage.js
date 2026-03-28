@@ -216,7 +216,7 @@ mentorMessageSchema.pre('save', function(next) {
 
 // Middleware: Prevent re-saving deleted messages
 mentorMessageSchema.pre('save', function(next) {
-  if (this.isDeleted && this.deletedAt && !this.wasNew) {
+  if (this.isDeleted && this.deletedAt && !this.isModified('isDeleted') && !this.wasNew) {
     return next(new Error('Cannot modify a deleted message'));
   }
   next();
