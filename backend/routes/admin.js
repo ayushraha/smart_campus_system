@@ -345,4 +345,51 @@ router.get('/analytics/placements', async (req, res) => {
   }
 });
 
+// ==========================================
+// MENTOR APPROVAL ROUTES (ALUMNI VERIFICATION)
+// ==========================================
+
+// Get pending mentors
+router.get('/mentors/pending', async (req, res) => {
+  try {
+    const Mentor = require('../models/Mentor');
+    const pendingMentors = await Mentor.find({ approvalStatus: 'pending' })
+      .populate('userId', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(pendingMentors);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching pending mentors', error: error.message });
+  }
+});
+
+// Approve mentor
+router.put('/mentors/:id/approve', async (req, res) => {
+  try {
+    const Mentor = require('../models/Mentor');
+    const mentor = await Mentor.findByIdAndUpdate(
+      req.params.id,
+      { isApproved: true, approvalStatus: 'approved' },
+      { new: true }
+    );
+    res.json({ message: 'Mentor approved', mentor });
+  } catch (error) {
+    res.status(500).json({ message: 'Error approving mentor', error: error.message });
+  }
+});
+
+// Reject mentor
+router.put('/mentors/:id/reject', async (req, res) => {
+  try {
+    const Mentor = require('../models/Mentor');
+    const mentor = await Mentor.findByIdAndUpdate(
+      req.params.id,
+      { isApproved: false, approvalStatus: 'rejected' },
+      { new: true }
+    );
+    res.json({ message: 'Mentor rejected', mentor });
+  } catch (error) {
+    res.status(500).json({ message: 'Error rejecting mentor', error: error.message });
+  }
+});
+
 module.exports = router;

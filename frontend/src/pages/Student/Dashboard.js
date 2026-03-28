@@ -16,6 +16,9 @@ import ResumeList from './ResumeList';
 import ResumeBuilder from './ResumeBuilder';
 import PremiumResumeParser from './PremiumResumeParser';
 import StudentProfileForm from './StudentProfileForm';
+import BecomeMentor from './BecomeMentor';
+import AIMentorMatch from './AIMentorMatch';
+import Messenger from './Messenger';
 import DriveCalendar from './DriveCalendar';
 import StudyGroups from './StudyGroups';
 import TrackApplications from './TrackApplications';
@@ -157,6 +160,32 @@ const Dashboard = () => {
             <Zap size={20} /> Premium Resume Parser
           </Link>
 
+          {/* ✅ MENTORSHIP SECTION */}
+          <div className="nav-section-title">🎓 Mentorship & Network</div>
+          
+          <Link 
+            to="/student/ai-mentor-match" 
+            className={activeTab === 'ai-mentor-match' ? 'active' : ''}
+            onClick={() => setActiveTab('ai-mentor-match')}
+          >
+            <Award size={20} /> AI Mentor Match
+          </Link>
+
+          <Link 
+            to="/student/become-mentor" 
+            className={activeTab === 'become-mentor' ? 'active' : ''}
+            onClick={() => setActiveTab('become-mentor')}
+          >
+            <Award size={20} /> Become a Mentor
+          </Link>
+
+          <Link 
+            to="/student/messages" 
+            className={activeTab === 'messages' ? 'active' : ''}
+            onClick={() => setActiveTab('messages')}
+          >
+            <MessageCircle size={20} /> Messages
+          </Link>
 
         </nav>
 
@@ -187,6 +216,10 @@ const Dashboard = () => {
           {/* Learning Tools Routes */}
           <Route path="/premium-resume-parser" element={<PremiumResumeParser />} />
 
+          {/* Mentorship Routes */}
+          <Route path="/ai-mentor-match" element={<AIMentorMatch />} />
+          <Route path="/become-mentor" element={<BecomeMentor />} />
+          <Route path="/messages" element={<Messenger />} />
 
           {/* Drive Calendar */}
           <Route path="/calendar" element={<DriveCalendar />} />

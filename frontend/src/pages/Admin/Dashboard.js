@@ -9,9 +9,9 @@ import Overview from './Overview';
 import Users from './Users';
 import Jobs from './Jobs';
 import Applications from './Applications';
-import Reports from './Reports';
 import QRScanner from './QRScanner'; // ADD THIS IMPORT
 import PlacementAnalytics from './PlacementAnalytics';
+import MentorApprovals from './MentorApprovals';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -76,13 +76,20 @@ const Dashboard = () => {
             <FiPieChart /> Analytics
           </Link>
 
-          {/* ADD THIS NEW LINK */}
           <Link 
             to="/admin/qr-scanner" 
             className={activeTab === 'qr-scanner' ? 'active' : ''}
             onClick={() => setActiveTab('qr-scanner')}
           >
             <QrCode size={20} /> QR Scanner
+          </Link>
+
+          <Link 
+            to="/admin/mentor-approvals" 
+            className={activeTab === 'mentor-approvals' ? 'active' : ''}
+            onClick={() => setActiveTab('mentor-approvals')}
+          >
+            <FiUsers size={20} /> Mentor Approvals
           </Link>
         </nav>
 
@@ -101,9 +108,8 @@ const Dashboard = () => {
           <Route path="/applications" element={<Applications />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/analytics" element={<PlacementAnalytics />} />
-          
-          {/* ADD THIS NEW ROUTE */}
           <Route path="/qr-scanner" element={<QRScanner />} />
+          <Route path="/mentor-approvals" element={<MentorApprovals />} />
         </Routes>
       </main>
     </div>

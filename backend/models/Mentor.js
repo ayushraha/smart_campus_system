@@ -31,6 +31,16 @@ const mentorSchema = new mongoose.Schema({
   activeStatus: { type: Boolean, default: true },
   sessionCount: { type: Number, default: 0 },
   avgResponseTime: { type: Number, default: 0 }, // in minutes
+  
+  // ✅ AI Mentor Matchmaker Security & Verification Fields
+  isApproved: { type: Boolean, default: false },
+  approvalStatus: { 
+    type: String, 
+    enum: ['pending', 'approved', 'rejected'], 
+    default: 'pending' 
+  },
+  linkedinProfile: { type: String },
+  
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

@@ -1,0 +1,18 @@
+[
+  {
+    "studentId": "69c680b34cd8916a6ac08f29",
+    "studentName": "Raj",
+    "studentEmail": "raj@gmail.com",
+    "lastMessage": "Hi",
+    "lastMessageTime": "2026-03-27T14:50:02.612Z",
+    "unread": 3
+  },
+  {
+    "studentId": "69c602d977523591d9469efd",
+    "studentName": "onkar",
+    "studentEmail": "onkar@gmail.com",
+    "lastMessage": "hi",
+    "lastMessageTime": "2026-03-27T14:49:10.069Z",
+    "unread": 1
+  }
+]

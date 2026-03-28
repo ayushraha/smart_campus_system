@@ -4,6 +4,8 @@ const { auth, checkRole, checkApproved } = require('../middleware/auth');
 
 const Mentor = require('../models/Mentor');
 const User = require('../models/User');
+const Application = require('../models/Application');
+const Job = require('../models/Job');
 const MentorSession = require('../models/MentorSession');
 
 
@@ -12,7 +14,22 @@ const MentorSession = require('../models/MentorSession');
 // ==========================
 router.get('/discover', async (req, res) => {
   try {
-    const mentors = await Mentor.find({ activeStatus: true })
+    const { skill, search } = req.query;
+    const filter = { activeStatus: true, isApproved: true };
+
+    if (skill && skill !== 'All') {
+      filter.skills = skill;
+    }
+    
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { company: { $regex: search, $options: 'i' } },
+        { role: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const mentors = await Mentor.find(filter)
       .sort({ rating: -1 })
       .limit(50);
 
@@ -59,7 +76,7 @@ router.get('/profile/:id', async (req, res) => {
 // ==========================
 router.post('/register', auth, checkRole('student', 'mentor'), async (req, res) => {
   try {
-    const { company, role, salary, skills, bio } = req.body;
+    const { company, role, salary, skills, bio, linkedinProfile } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -70,14 +87,36 @@ router.post('/register', auth, checkRole('student', 'mentor'), async (req, res) 
       return res.status(400).json({ message: 'You are already registered as a mentor' });
     }
 
+    // 🔒 Dual-Tier Security Check: Placed Students vs Alumni
+    const placedApp = await Application.findOne({ 
+      studentId: req.user.id, 
+      status: 'selected' 
+    }).populate('jobId');
+
+    const isVerifiedPlacement = !!placedApp;
+    let finalCompany = company;
+    let finalRole = role;
+
+    if (isVerifiedPlacement && placedApp.jobId) {
+      finalCompany = placedApp.jobId.companyName;
+      finalRole = placedApp.jobId.title;
+    }
+
+    if (!isVerifiedPlacement && !linkedinProfile) {
+      return res.status(400).json({ message: 'Alumni must provide a LinkedIn Profile URL for manual verification.' });
+    }
+
     const mentor = new Mentor({
       userId: req.user.id,
       name: user.name,
-      company,
-      role,
+      company: finalCompany || 'Unknown',
+      role: finalRole || 'Mentor',
       salary,
       skills,
       bio,
+      linkedinProfile,
+      isApproved: isVerifiedPlacement,
+      approvalStatus: isVerifiedPlacement ? 'approved' : 'pending',
       activeStatus: true
     });
 
