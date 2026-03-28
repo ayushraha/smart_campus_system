@@ -19,7 +19,8 @@ const Messenger = () => {
   const fetchInbox = async () => {
     try {
       // Fetch the student inbox (where user is the student)
-      const studentRes = await api.get(`/mentor-messages/student-inbox/${user.id}`);
+      const userId = user._id || user.id;
+      const studentRes = await api.get(`/mentor-messages/student-inbox/${userId}`);
       let combined = studentRes.data.map(item => ({
         contactId: item.mentorId,
         contactName: item.mentorName,
@@ -53,8 +54,9 @@ const Messenger = () => {
     if (!contact) return;
     try {
       // Determine correct mentor/student IDs based on the thread type
+      const userId = user._id || user.id;
       const mentorIdToFetch = contact.type === 'mentor' ? contact.contactId : myMentorId;
-      const studentIdToFetch = contact.type === 'student' ? contact.contactId : user.id;
+      const studentIdToFetch = contact.type === 'student' ? contact.contactId : userId;
 
       const res = await api.get(`/mentor-messages/thread/${mentorIdToFetch}/${studentIdToFetch}`);
       setMessages(res.data);
@@ -113,9 +115,10 @@ const Messenger = () => {
       }
       
       // Optimitscally update UI then trigger refresh
+      const userId = user._id || user.id;
       const optimisticMsg = {
         _id: Math.random().toString(),
-        sender: activeThread.type === 'student' ? 'mentor' : user.id, // Display hack
+        sender: activeThread.type === 'student' ? 'mentor' : userId, // Display hack
         senderType: activeThread.type === 'student' ? 'mentor' : 'student',
         content: newMessage,
         createdAt: new Date().toISOString()
@@ -186,9 +189,10 @@ const Messenger = () => {
 
             <div className="chat-messages">
               {messages.map((msg) => {
+                const userId = user._id || user.id;
                 const isSentByMe = 
                   (activeThread.type === 'mentor' && msg.sender === 'student') || 
-                  (activeThread.type === 'student' && msg.sender === 'mentor') || msg.sender === user.id;
+                  (activeThread.type === 'student' && msg.sender === 'mentor') || msg.sender === userId;
 
                 return (
                   <div key={msg._id} className={`message-bubble ${isSentByMe ? 'sent' : 'received'}`}>
