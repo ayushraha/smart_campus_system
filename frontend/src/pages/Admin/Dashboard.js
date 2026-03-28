@@ -9,6 +9,7 @@ import Overview from './Overview';
 import Users from './Users';
 import Jobs from './Jobs';
 import Applications from './Applications';
+import Reports from './Reports';
 import QRScanner from './QRScanner'; // ADD THIS IMPORT
 import PlacementAnalytics from './PlacementAnalytics';
 import MentorApprovals from './MentorApprovals';
