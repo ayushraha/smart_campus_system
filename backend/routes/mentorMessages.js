@@ -71,6 +71,49 @@ router.get('/inbox/:mentorId', auth, async (req, res) => {
   }
 });
 
+// ===============================
+// GET: Student views all their ongoing conversations (WhatsApp style inbox)
+// ===============================
+router.get('/student-inbox/:studentId', auth, async (req, res) => {
+  try {
+    const studentId = req.params.studentId;
+
+    if (studentId !== req.user.id.toString()) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Get all messages where this user is the student
+    const messages = await MentorMessage.find({ studentId })
+      .populate('mentorId', 'name company role profileImage')
+      .sort({ createdAt: -1 });
+
+    const convMap = {};
+    messages.forEach(msg => {
+      const mId = msg.mentorId?._id?.toString();
+      if (!mId) return;
+
+      if (!convMap[mId]) {
+        convMap[mId] = {
+          mentorId: mId,
+          mentorName: msg.mentorId?.name || 'Unknown Mentor',
+          mentorCompany: msg.mentorId?.company || '',
+          mentorRole: msg.mentorId?.role || '',
+          lastMessage: msg.content,
+          lastMessageTime: msg.createdAt,
+          unread: 0
+        };
+      }
+      
+      // If message is from mentor and unread, increment count
+      if (msg.sender === 'mentor' && !msg.isRead) convMap[mId].unread++;
+    });
+
+    res.status(200).json(Object.values(convMap));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 // ===============================
 // GET: Mentor views one student's full conversation

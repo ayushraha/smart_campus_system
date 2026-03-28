@@ -21,6 +21,7 @@ import BecameMentor from './BecameMentor';
 import DriveCalendar from './DriveCalendar';
 import StudyGroups from './StudyGroups';
 import TrackApplications from './TrackApplications';
+import Messenger from './Messenger';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -171,6 +172,14 @@ const Dashboard = () => {
           </Link>
 
           <Link 
+            to="/student/messages" 
+            className={activeTab === 'messages' ? 'active' : ''}
+            onClick={() => setActiveTab('messages')}
+          >
+            <MessageCircle size={20} /> Messages
+          </Link>
+
+          <Link 
             to="/student/become-mentor" 
             className={activeTab === 'become-mentor' ? 'active' : ''}
             onClick={() => setActiveTab('become-mentor')}
@@ -208,6 +217,7 @@ const Dashboard = () => {
 
           {/* Mentorship Routes */}
           <Route path="/mentorship" element={<MentorshipHub />} />
+          <Route path="/messages" element={<Messenger />} />
           <Route path="/become-mentor" element={<BecameMentor />} />
 
           {/* Drive Calendar */}
