@@ -10,28 +10,53 @@ const Messenger = () => {
   const [activeThread, setActiveThread] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [myMentorId, setMyMentorId] = useState(null);
   const messagesEndRef = useRef(null);
   
   // Real-time polling reference
   const pollingRef = useRef(null);
 
-  // Fetch conversation groups
   const fetchInbox = async () => {
     try {
-      const res = await api.get(`/mentor-messages/inbox/${user.id}`);
-      setInboxGroups(res.data);
+      // Fetch the student inbox (where user is the student)
+      const studentRes = await api.get(`/mentor-messages/student-inbox/${user.id}`);
+      let combined = studentRes.data.map(item => ({
+        contactId: item.mentorId,
+        contactName: item.mentorName,
+        latestMessage: { content: item.lastMessage, createdAt: item.lastMessageTime },
+        type: 'mentor' // I am talking to a mentor
+      }));
+
+      // Check if user is also a mentor, fetch their mentor inbox
+      const statusRes = await api.get('/mentor/check-status');
+      if (statusRes.data.isMentor && statusRes.data.mentor && statusRes.data.mentor._id) {
+        setMyMentorId(statusRes.data.mentor._id);
+        const mentorRes = await api.get(`/mentor-messages/inbox/${statusRes.data.mentor._id}`);
+        const mentorGroups = mentorRes.data.map(item => ({
+          contactId: item.studentId,
+          contactName: item.studentName,
+          latestMessage: { content: item.lastMessage, createdAt: item.lastMessageTime },
+          type: 'student' // I am talking to my student
+        }));
+        combined = [...combined, ...mentorGroups];
+      }
+
+      // Sort by latest message
+      combined.sort((a, b) => new Date(b.latestMessage.createdAt) - new Date(a.latestMessage.createdAt));
+      setInboxGroups(combined);
     } catch (error) {
-      console.error('Failed to load inbox', error);
+      console.error('Failed to load combined inbox', error);
     }
   };
 
-  const fetchActiveThread = async (contactId) => {
-    if (!contactId) return;
+  const fetchActiveThread = async (contact) => {
+    if (!contact) return;
     try {
-      // The endpoint is designed to figure out if it's student-to-mentor or mentor-to-student 
-      // based on who is querying.
-      const res = await api.get(`/mentor-messages/thread/${contactId}/${user.id}`);
-      // The API returns thread messages
+      // Determine correct mentor/student IDs based on the thread type
+      const mentorIdToFetch = contact.type === 'mentor' ? contact.contactId : myMentorId;
+      const studentIdToFetch = contact.type === 'student' ? contact.contactId : user.id;
+
+      const res = await api.get(`/mentor-messages/thread/${mentorIdToFetch}/${studentIdToFetch}`);
       setMessages(res.data);
     } catch (error) {
       console.error('Failed to load thread', error);
@@ -47,10 +72,10 @@ const Messenger = () => {
 
   useEffect(() => {
     if (activeThread) {
-      fetchActiveThread(activeThread.contactId);
+      fetchActiveThread(activeThread);
       // Start polling the active thread
       pollingRef.current = setInterval(() => {
-        fetchActiveThread(activeThread.contactId);
+        fetchActiveThread(activeThread);
       }, 5000);
     }
     
@@ -72,14 +97,31 @@ const Messenger = () => {
 
     try {
       setNewMessage('');
-      const payload = {
-        mentorId: activeThread.contactId, // Handles both directions via API logic
-        content: newMessage
-      };
+      if (activeThread.type === 'mentor') {
+        // User is a student sending to their mentor
+        await api.post('/mentor-messages/send', {
+          mentorId: activeThread.contactId,
+          content: newMessage
+        });
+      } else {
+        // User is a mentor replying to their student
+        await api.post('/mentor-messages/mentor-response', {
+          studentId: activeThread.contactId,
+          mentorId: myMentorId,
+          content: newMessage
+        });
+      }
       
-      const res = await api.post('/mentor-messages/send', payload);
-      setMessages([...messages, res.data.message]);
-      fetchInbox(); // Refresh sidebar to move thread up
+      // Optimitscally update UI then trigger refresh
+      const optimisticMsg = {
+        _id: Math.random().toString(),
+        sender: activeThread.type === 'student' ? 'mentor' : user.id, // Display hack
+        senderType: activeThread.type === 'student' ? 'mentor' : 'student',
+        content: newMessage,
+        createdAt: new Date().toISOString()
+      };
+      setMessages([...messages, optimisticMsg]);
+      fetchInbox();
     } catch (err) {
       console.error(err);
       alert('Failed to send message.');
@@ -144,7 +186,10 @@ const Messenger = () => {
 
             <div className="chat-messages">
               {messages.map((msg) => {
-                const isSentByMe = msg.sender.toString() === user.id.toString();
+                const isSentByMe = 
+                  (activeThread.type === 'mentor' && msg.sender === 'student') || 
+                  (activeThread.type === 'student' && msg.sender === 'mentor') || msg.sender === user.id;
+
                 return (
                   <div key={msg._id} className={`message-bubble ${isSentByMe ? 'sent' : 'received'}`}>
                     {msg.content}
