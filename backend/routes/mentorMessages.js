@@ -221,4 +221,34 @@ router.put('/mark-helpful/:messageId', auth, async (req, res) => {
   }
 });
 
+// ===============================
+// DELETE: Soft delete a message
+// ===============================
+router.delete('/:messageId', auth, async (req, res) => {
+  try {
+    const message = await MentorMessage.findById(req.params.messageId);
+    if (!message) return res.status(404).json({ message: 'Message not found' });
+
+    // Check ownership
+    const isStudentSender = message.sender === 'student' && message.studentId.toString() === req.user.id.toString();
+    
+    let isMentorSender = false;
+    if (message.sender === 'mentor') {
+       const mentor = await Mentor.findById(message.mentorId);
+       if (mentor && mentor.userId.toString() === req.user.id.toString()) {
+         isMentorSender = true;
+       }
+    }
+
+    if (!isStudentSender && !isMentorSender) {
+      return res.status(403).json({ message: 'You can only delete your own messages' });
+    }
+
+    await message.softDelete();
+    res.status(200).json({ message: 'Message deleted successfully', data: message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

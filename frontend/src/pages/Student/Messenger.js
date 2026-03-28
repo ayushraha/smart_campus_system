@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import './Messenger.css';
-import { FiSend, FiMessageSquare } from 'react-icons/fi';
+import { FiSend, FiMessageSquare, FiTrash2 } from 'react-icons/fi';
 
 const Messenger = () => {
   const { user } = useAuth();
@@ -129,6 +129,15 @@ const Messenger = () => {
       console.error(err);
       alert('Failed to send message.');
     }
+  const handleDeleteMessage = async (msgId) => {
+    if (!window.confirm("Delete this message for everyone?")) return;
+    try {
+      await api.delete(`/mentor-messages/${msgId}`);
+      setMessages(messages.map(m => m._id === msgId ? { ...m, isDeleted: true, content: '[Message deleted]' } : m));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete message');
+    }
   };
 
   return (
@@ -195,11 +204,24 @@ const Messenger = () => {
                   (activeThread.type === 'student' && msg.sender === 'mentor') || msg.sender === userId;
 
                 return (
-                  <div key={msg._id} className={`message-bubble ${isSentByMe ? 'sent' : 'received'}`}>
-                    {msg.content}
+                  <div key={msg._id} className={`message-bubble ${isSentByMe ? 'sent' : 'received'} ${msg.isDeleted ? 'deleted-msg' : ''}`}>
+                    <div className="msg-content">
+                      {msg.isDeleted ? <span style={{fontStyle: 'italic', opacity: 0.7}}>🚫 This message was deleted</span> : msg.content}
+                    </div>
+                    
                     <span className="msg-time">
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
+
+                    {isSentByMe && !msg.isDeleted && (
+                      <button 
+                        className="del-msg-btn"
+                        onClick={() => handleDeleteMessage(msg._id)}
+                        title="Delete for everyone"
+                      >
+                        <FiTrash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 );
               })}
