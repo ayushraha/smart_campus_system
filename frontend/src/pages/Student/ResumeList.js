@@ -104,7 +104,7 @@ const ResumeList = () => {
         throw new Error(parseResponse.data.error || "Parsing failed");
       }
 
-      const parsedJson = parseResponse.data.data;
+      const parsedJson = parseResponse.data.parsedData || parseResponse.data.data;
       
       // Normalize Gemini output to our Resume model schema
       const normalizedData = {
