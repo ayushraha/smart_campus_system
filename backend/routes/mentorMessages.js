@@ -124,7 +124,12 @@ router.get('/thread/:mentorId/:studentId', auth, async (req, res) => {
 
     const mentor = await Mentor.findById(mentorId);
     if (!mentor) return res.status(404).json({ message: 'Mentor not found' });
-    if (mentor.userId.toString() !== req.user.id.toString()) {
+    
+    // Both the assigned student AND the mentor are allowed to fetch the thread!
+    const isMentor = mentor.userId.toString() === req.user._id.toString();
+    const isStudent = studentId === req.user._id.toString();
+
+    if (!isMentor && !isStudent) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -153,7 +158,7 @@ router.post('/send', auth, checkRole('student'), checkApproved, async (req, res)
 
     const message = new MentorMessage({
       mentorId,
-      studentId: req.user.id,
+      studentId: req.user._id,
       sender: 'student',
       content,
       createdAt: new Date()
@@ -183,7 +188,7 @@ router.post('/mentor-response', auth, checkRole('student'), checkApproved, async
 
     const mentor = await Mentor.findById(mentorId);
     if (!mentor) return res.status(404).json({ message: 'Mentor not found' });
-    if (mentor.userId.toString() !== req.user.id.toString()) {
+    if (mentor.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Access denied. You are not this mentor.' });
     }
 
@@ -230,12 +235,12 @@ router.delete('/:messageId', auth, async (req, res) => {
     if (!message) return res.status(404).json({ message: 'Message not found' });
 
     // Check ownership
-    const isStudentSender = message.sender === 'student' && message.studentId.toString() === req.user.id.toString();
+    const isStudentSender = message.sender === 'student' && message.studentId.toString() === req.user._id.toString();
     
     let isMentorSender = false;
     if (message.sender === 'mentor') {
        const mentor = await Mentor.findById(message.mentorId);
-       if (mentor && mentor.userId.toString() === req.user.id.toString()) {
+       if (mentor && mentor.userId.toString() === req.user._id.toString()) {
          isMentorSender = true;
        }
     }
