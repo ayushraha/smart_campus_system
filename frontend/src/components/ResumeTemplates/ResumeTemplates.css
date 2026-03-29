@@ -2,6 +2,23 @@
 
 /* Print Styles for PDF Export */
 @media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    margin: 0;
+    background: white;
+  }
+  .resume-template {
+    box-shadow: none !important;
+    width: 100% !important;
+    min-height: 100% !important;
+    padding: 10mm !important;
+    margin: 0 !important;
+  }
   .no-print {
     display: none !important;
   }
