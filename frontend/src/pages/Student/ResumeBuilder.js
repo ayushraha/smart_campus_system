@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print';
+import ResumePreview from '../../components/ResumeTemplates/ResumePreview';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { 
@@ -14,6 +16,7 @@ const ResumeBuilder = () => {
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('personal');
   const [completeness, setCompleteness] = useState(0);
+  const componentRef = useRef(null);
 
   const [resumeData, setResumeData] = useState({
     personalInfo: {
@@ -123,7 +126,12 @@ const ResumeBuilder = () => {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = useReactToPrint({
+    content: () => componentRef.current,
+    documentTitle: `${resumeData.personalInfo?.firstName || 'My'}_Resume`,
+  });
+
+  const handleDownloadJson = () => {
     const dataStr = JSON.stringify(resumeData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
@@ -276,8 +284,11 @@ const ResumeBuilder = () => {
           <button onClick={() => navigate('/student/resume')} className="btn-preview">
             <FiEye /> Back to List
           </button>
-          <button onClick={handleDownload} className="btn-download-alt">
-            <FiDownload /> Download
+          <button onClick={handleDownloadJson} className="btn-download-alt" style={{ background: '#64748b' }}>
+            <FiDownload /> Export JSON
+          </button>
+          <button onClick={handleDownload} className="btn-save" style={{ background: '#16a34a' }}>
+            <FiDownload /> Download PDF
           </button>
           <button onClick={handleAnalyze} disabled={loading || !resumeId} className="btn-analyze-alt">
             {loading ? 'Analyzing...' : 'Analyze with AI'}
@@ -334,7 +345,7 @@ const ResumeBuilder = () => {
           </button>
         </div>
 
-        <div className="builder-content">
+        <div className="builder-content" style={{ flex: '1 1 50%' }}>
           {/* Personal Information Section */}
           {activeSection === 'personal' && (
             <div className="section-content">
@@ -776,6 +787,25 @@ const ResumeBuilder = () => {
             </div>
           )}
         </div>
+        
+        {/* Right side live preview pane */}
+        <div className="builder-preview" style={{ 
+          flex: '1 1 50%', 
+          background: '#fff', 
+          borderRadius: '15px', 
+          padding: '20px', 
+          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+          overflowY: 'auto',
+          maxHeight: 'calc(100vh - 150px)',
+          position: 'sticky',
+          top: '20px'
+        }}>
+          <h2 style={{ borderBottom: '1px solid #e0e0e0', paddingBottom: '10px', marginBottom: '20px', color: '#333' }}>Live Resume Preview</h2>
+          <div className="preview-container-print" ref={componentRef} style={{ transform: 'scale(0.85)', transformOrigin: 'top center', padding: '10px' }}>
+            <ResumePreview data={resumeData} templateId={resumeData.template} />
+          </div>
+        </div>
+
       </div>
     </div>
   );
