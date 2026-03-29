@@ -17,6 +17,7 @@ import ResumeBuilder from './ResumeBuilder';
 import PremiumResumeParser from './PremiumResumeParser';
 import StudentProfileForm from './StudentProfileForm';
 import BecomeMentor from './BecomeMentor';
+import AIMockInterview from './AIMockInterview';
 import AIMentorMatch from './AIMentorMatch';
 import Messenger from './Messenger';
 import DriveCalendar from './DriveCalendar';
@@ -160,6 +161,14 @@ const Dashboard = () => {
             <Zap size={20} /> Premium Resume Parser
           </Link>
 
+          <Link 
+            to="/student/ai-mock-interview" 
+            className={activeTab === 'ai-mock-interview' ? 'active' : ''}
+            onClick={() => setActiveTab('ai-mock-interview')}
+          >
+            <FiVideo size={20} /> AI Mock Interview
+          </Link>
+
           {/* ✅ MENTORSHIP SECTION */}
           <div className="nav-section-title">🎓 Mentorship & Network</div>
           
@@ -215,6 +224,7 @@ const Dashboard = () => {
 
           {/* Learning Tools Routes */}
           <Route path="/premium-resume-parser" element={<PremiumResumeParser />} />
+          <Route path="/ai-mock-interview" element={<AIMockInterview />} />
 
           {/* Mentorship Routes */}
           <Route path="/ai-mentor-match" element={<AIMentorMatch />} />

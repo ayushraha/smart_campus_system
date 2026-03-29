@@ -160,6 +160,7 @@ const mentorMessageRoutes = require('./routes/mentorMessages');
 const driveEventRoutes = require('./routes/driveEvents');
 const notificationRoutes = require('./routes/notifications');
 const studyGroupRoutes = require('./routes/studyGroups');
+const mockInterviewRoutes = require('./routes/mockInterview');
 
 
 // ✅ Register Routes
@@ -179,6 +180,7 @@ app.use('/api/mentor-messages', mentorMessageRoutes);
 app.use('/api/drive-events', driveEventRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/study-groups', studyGroupRoutes);
+app.use('/api/mock-interview', mockInterviewRoutes);
 
 // ✅ Health check endpoint
 app.get('/health', (req, res) => {
