@@ -2,17 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-// Auth middleware (using basic mock for testing if needed, or your actual auth)
-const authMiddleware = async (req, res, next) => {
-  try {
-    // Basic verify - adapt as per your existing auth middleware
-    req.user = req.user || { id: "test-user-123", role: "student" };
-    next();
-  } catch (error) {
-    res.status(401).json({ success: false, error: 'Auth failed' });
-  }
-};
+const { auth } = require('../middleware/auth');
 
 // Initialize Gemini
 const apiKey = process.env.GOOGLE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
@@ -22,7 +12,7 @@ if (apiKey) {
 }
 
 // POST /api/mock-interview/chat
-router.post('/chat', authMiddleware, async (req, res) => {
+router.post('/chat', auth, async (req, res) => {
   if (!genAI) {
     return res.status(500).json({ success: false, error: 'Gemini AI not configured.' });
   }
@@ -36,7 +26,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
     const level = experienceLevel || 'Entry-Level';
     const history = conversationHistory || [];
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // The system prompt sets the strict persona
     const systemInstruction = `You are a strict, professional, and highly experienced interviewer for the role of ${level} ${role}.
@@ -112,14 +102,14 @@ router.post('/chat', authMiddleware, async (req, res) => {
 });
 
 // POST /api/mock-interview/evaluate
-router.post('/evaluate', authMiddleware, async (req, res) => {
+router.post('/evaluate', auth, async (req, res) => {
   if (!genAI) {
     return res.status(500).json({ success: false, error: 'Gemini AI not configured.' });
   }
 
   try {
     const { jobRole, interviewType, experienceLevel, conversationHistory } = req.body;
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Format transcript
     const transcript = conversationHistory.map(msg => `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.content}`).join('\n\n');
