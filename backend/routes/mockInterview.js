@@ -50,7 +50,7 @@ router.post('/chat', auth, async (req, res) => {
         `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.content}`
     ).join('\n\n');
     
-    // Construct the active prompt
+    // Construct the active prompt with FEW-SHOT examples for precision
     let prompt = "";
     if (history.length === 0) {
       prompt = "This is the start of the interview. Represent as the interviewer and ask the first question (e.g. 'Welcome! Tell me about yourself').";
@@ -59,12 +59,21 @@ router.post('/chat', auth, async (req, res) => {
       CURRENT TRANSCRIPT:
       ${transcript}
       
-      INSTRUCTION:
-      1. Review the Candidate's last answer.
-      2. Briefly acknowledge the specific points made in that answer (e.g., "Good point about X" or "I see your experience in Y").
+      INSTRUCTION FOR THE INTERVIEWER:
+      1. Carefully review the Candidate's last answer.
+      2. Briefly acknowledge the specific points made in that answer.
       3. Ask exactly ONE relevant follow-up question that dives deeper into their answer. 
-      4. Do NOT ask generic questions. Be specific to what they just said.
-      5. Speak directly as the interviewer.
+      4. DO NOT ask generic questions (e.g., "Tell me more about your project"). 
+      5. BE SPECIFIC to the tools, technologies, or challenges they just mentioned.
+
+      EXAMPLES OF GOOD FOLLOW-UPS:
+      Candidate: "I prefer React for frontend because of its component-based architecture and hooks like useEffect."
+      Interviewer: "I see you value the hooks system. How would you handle a race condition within a useEffect call that fetches data?"
+
+      Candidate: "I used Python for the backend scraping because of BeautifulSoup's ease of use."
+      Interviewer: "Good choice with BeautifulSoup. How did you handle sites that rely heavily on JavaScript for content rendering?"
+
+      YOUR RESPONSE (Speak directly as the interviewer):
       `;
     }
 

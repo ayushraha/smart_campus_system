@@ -320,12 +320,12 @@ const AIMockInterview = () => {
             <div className="ai-avatar">
               <div className={`pulse-ring ${status === 'speaking' ? 'active' : ''}`}></div>
               <div className={`pulse-ring delay-1 ${status === 'speaking' ? 'active' : ''}`}></div>
-              <div className="ai-icon">🤖</div>
+              <div className="ai-icon">🏛️</div>
             </div>
             <div className="ai-meta">
-              <h1 className="manrope-display-lg">AI Interviewer</h1>
+              <h1 className="playfair-headline">Aurelian Assistant</h1>
               <div className="status-badge">
-                {status === 'speaking' && "Synthesizing follow-up..."}
+                {status === 'speaking' && "Synthesizing Insight..."}
                 {status === 'listening' && "Awaiting Candidate..."}
                 {status === 'thinking' && "Analyzing Response..."}
                 {status === 'idle' && "System Ready"}
@@ -366,7 +366,7 @@ const AIMockInterview = () => {
 
       <div className="transcript-sidebar">
         <div className="sidebar-header">
-          <h2 className="manrope-headline-lg">Journal</h2>
+          <h2 className="playfair-headline-sm">Journal</h2>
         </div>
         <div className="transcript-messages">
           {messages.map((msg, i) => (
@@ -382,7 +382,7 @@ const AIMockInterview = () => {
             type="text" 
             value={inputMessage} 
             onChange={(e) => setInputMessage(e.target.value)} 
-            placeholder="Direct Input Override..."
+            placeholder="Document point of concern..."
             disabled={loading}
           />
           <button type="submit" disabled={!inputMessage.trim()}><Send size={14}/></button>
