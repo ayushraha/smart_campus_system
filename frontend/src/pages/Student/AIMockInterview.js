@@ -22,6 +22,7 @@ const AIMockInterview = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isSTTActive, setIsSTTActive] = useState(false);
   const [isTTSActive, setIsTTSActive] = useState(true);
+  const [status, setStatus] = useState('idle'); // 'idle', 'speaking', 'listening', 'thinking'
 
   // Media state
   const [stream, setStream] = useState(null);
@@ -95,23 +96,32 @@ const AIMockInterview = () => {
   };
 
   // Text to Speech
-  const speakText = (text) => {
-    if (!isTTSActive || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel(); // Stop current speaking
+  const speakText = (text, onComplete) => {
+    if (!isTTSActive || !window.speechSynthesis) {
+        if (onComplete) onComplete();
+        return;
+    }
+    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Try to find an English voice
     const voices = window.speechSynthesis.getVoices();
     const engVoice = voices.find(v => v.lang.includes('en-US')) || voices[0];
     if (engVoice) utterance.voice = engVoice;
     
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
+
+    utterance.onstart = () => setStatus('speaking');
+    utterance.onend = () => {
+        setStatus('listening');
+        if (onComplete) onComplete();
+    };
+
     window.speechSynthesis.speak(utterance);
   };
 
   // Speech to Text
-  const toggleListening = () => {
+  const toggleListening = (auto = false) => {
     if (!recognition) {
       toast.error("Speech recognition is not supported in this browser.");
       return;
@@ -124,7 +134,7 @@ const AIMockInterview = () => {
       try {
         recognition.start();
         setIsSTTActive(true);
-        toast.info("Listening... Speak now");
+        if (!auto) toast.info("Listening... Speak now");
       } catch(e) {
         console.error(e);
       }
@@ -136,9 +146,19 @@ const AIMockInterview = () => {
       const transcript = event.results[0][0].transcript;
       setInputMessage(transcript);
       setIsSTTActive(false);
+      // Auto-send if it was a voice capture
+      if (status === 'listening') {
+        setTimeout(() => sendMessage(null, transcript), 500);
+      }
     };
-    recognition.onerror = () => setIsSTTActive(false);
-    recognition.onend = () => setIsSTTActive(false);
+    recognition.onerror = (event) => {
+      console.error("STT Error:", event.error);
+      setIsSTTActive(false);
+      if (status === 'listening') setStatus('idle');
+    };
+    recognition.onend = () => {
+      setIsSTTActive(false);
+    };
   }
 
   // --- API Integrations ---
@@ -160,7 +180,9 @@ const AIMockInterview = () => {
         const welcomeMessage = { role: 'ai', content: response.data.response };
         setMessages([welcomeMessage]);
         setPhase('interview');
-        speakText(response.data.response);
+        speakText(response.data.response, () => {
+            toggleListening(true);
+        });
       }
     } catch (error) {
       toast.error('Failed to start interview.');
@@ -170,15 +192,16 @@ const AIMockInterview = () => {
     }
   };
 
-  const sendMessage = async (e) => {
+  const sendMessage = async (e, voiceContent = null) => {
     if (e) e.preventDefault();
-    if (!inputMessage.trim()) return;
+    const userMsg = voiceContent || inputMessage;
+    if (!userMsg.trim()) return;
 
-    const userMsg = inputMessage;
     setInputMessage('');
     const newHistory = [...messages, { role: 'user', content: userMsg }];
     setMessages(newHistory);
     setLoading(true);
+    setStatus('thinking');
 
     try {
       const token = localStorage.getItem('token');
@@ -193,7 +216,9 @@ const AIMockInterview = () => {
 
       if (response.data.success) {
         setMessages([...newHistory, { role: 'ai', content: response.data.response }]);
-        speakText(response.data.response);
+        speakText(response.data.response, () => {
+          toggleListening(true);
+        });
       }
     } catch (error) {
       toast.error('Failed to send message.');
@@ -282,74 +307,76 @@ const AIMockInterview = () => {
   );
 
   const renderInterviewRoom = () => (
-    <div className="interview-room">
-      <div className="video-container">
-        <div className="ai-status">
-          <div className="pulse"></div> AI Interviewer Active
-        </div>
-        
-        {cameraActive && stream ? (
-          <video ref={videoRef} autoPlay muted playsInline className="video-feed" />
-        ) : (
-          <div className="video-placeholder">
-            <CameraOff size={48} />
-            <p style={{ marginTop: '10px' }}>Camera Disabled</p>
+    <div className={`interview-room status-${status}`}>
+      <div className="video-main-container">
+        <div className="ai-persona-container">
+          <div className="ai-avatar">
+            <div className={`pulse-ring ${status === 'speaking' ? 'active' : ''}`}></div>
+            <div className={`pulse-ring delay-1 ${status === 'speaking' ? 'active' : ''}`}></div>
+            <div className="ai-icon">🤖</div>
           </div>
-        )}
+          <div className="status-badge">
+            {status === 'speaking' && "AI is speaking..."}
+            {status === 'listening' && "Listening to you..."}
+            {status === 'thinking' && "AI is thinking..."}
+            {status === 'idle' && "Ready"}
+          </div>
+        </div>
 
-        <div className="video-controls">
-          <button className={`control-btn ${!micActive ? 'danger' : 'active'}`} onClick={toggleMic} title="Toggle Mic">
-            {micActive ? <Mic size={20} /> : <MicOff size={20} />}
-          </button>
-          <button className={`control-btn ${!cameraActive ? 'danger' : 'active'}`} onClick={toggleCamera} title="Toggle Camera">
-            {cameraActive ? <Camera size={20} /> : <CameraOff size={20} />}
-          </button>
-          <button className="control-btn danger" onClick={endInterview} title="End Interview">
-            <StopCircle size={20} />
-          </button>
+        <div className="candidate-video-wrapper">
+          {cameraActive && stream ? (
+            <video ref={videoRef} autoPlay muted playsInline className="video-feed" />
+          ) : (
+            <div className="video-placeholder">
+              <CameraOff size={48} />
+              <p>Camera Disabled</p>
+            </div>
+          )}
+          
+          <div className="user-voice-indicator">
+             <div className={`bar ${isSTTActive ? 'animating' : ''}`}></div>
+             <div className={`bar ${isSTTActive ? 'animating' : ''}`}></div>
+             <div className={`bar ${isSTTActive ? 'animating' : ''}`}></div>
+          </div>
+
+          <div className="video-controls-overlay">
+            <button className={`control-btn ${!micActive ? 'danger' : 'active'}`} onClick={toggleMic}>
+              {micActive ? <Mic size={18} /> : <MicOff size={18} />}
+            </button>
+            <button className={`control-btn ${!cameraActive ? 'danger' : 'active'}`} onClick={toggleCamera}>
+              {cameraActive ? <Camera size={18} /> : <CameraOff size={18} />}
+            </button>
+            <button className="control-btn danger" onClick={endInterview}>
+              <StopCircle size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="chat-container">
-        <div className="chat-header">
-          <MessageSquare size={20} color="#4f46e5" />
-          <span>Interview Transcript</span>
+      <div className="transcript-sidebar">
+        <div className="sidebar-header">
+          <MessageSquare size={18} />
+          <span>Real-time Transcript</span>
         </div>
-
-        <div className="chat-messages">
+        <div className="transcript-messages">
           {messages.map((msg, i) => (
-            <div key={i} className={`message ${msg.role}`}>
-              {msg.content}
+            <div key={i} className={`msg-bubble ${msg.role}`}>
+              <div className="msg-text">{msg.content}</div>
             </div>
           ))}
-          {loading && (
-            <div className="message ai" style={{ opacity: 0.7 }}>
-              AI is thinking...
-            </div>
-          )}
           <div ref={messagesEndRef} />
         </div>
-
-        <form className="chat-input" onSubmit={sendMessage}>
-          <button 
-            type="button" 
-            className={`btn-send ${isSTTActive ? 'danger' : ''}`} 
-            style={{ background: isSTTActive ? '#ef4444' : '#e2e8f0', color: isSTTActive ? 'white' : '#64748b' }}
-            onClick={toggleListening}
-            title="Speak your answer"
-          >
-            <Mic size={18} />
-          </button>
+        
+        {/* Simple text input as fallback */}
+        <form className="mini-input" onSubmit={sendMessage}>
           <input 
             type="text" 
             value={inputMessage} 
             onChange={(e) => setInputMessage(e.target.value)} 
-            placeholder="Type your answer, or use the mic icon to speak..."
-            disabled={loading || isSTTActive}
+            placeholder="Type if mic fails..."
+            disabled={loading}
           />
-          <button type="submit" className="btn-send" disabled={loading || !inputMessage.trim() || isSTTActive}>
-            <Send size={18} />
-          </button>
+          <button type="submit" disabled={!inputMessage.trim()}><Send size={16}/></button>
         </form>
       </div>
     </div>
