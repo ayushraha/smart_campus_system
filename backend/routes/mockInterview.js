@@ -45,30 +45,30 @@ router.post('/chat', auth, async (req, res) => {
       systemInstruction: systemInstruction
     });
 
-    // Handle history conversion
-    let geminiHistory = [];
-    if (history.length > 0) {
-        geminiHistory = history.map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.content }]
-        }));
-    }
-
-    // Nudge/Prompt logic
-    let prompt = "Proceed with the interview.";
+    // Handle history conversion into a single context string to force attention
+    const transcript = history.map(msg => 
+        `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.content}`
+    ).join('\n\n');
+    
+    // Construct the active prompt
+    let prompt = "";
     if (history.length === 0) {
-      prompt = "This is the start of the interview. Please welcome the candidate and ask the first question.";
+      prompt = "This is the start of the interview. Represent as the interviewer and ask the first question (e.g. 'Welcome! Tell me about yourself').";
     } else {
-      const lastMessage = history[history.length - 1];
-      if (lastMessage && lastMessage.role === 'user') {
-          prompt = lastMessage.content;
-          // Pop it from history to send it actively via sendMessage
-          geminiHistory.pop();
-      }
+      prompt = `
+      CURRENT TRANSCRIPT:
+      ${transcript}
+      
+      INSTRUCTION:
+      1. Review the Candidate's last answer.
+      2. Briefly acknowledge the specific points made in that answer (e.g., "Good point about X" or "I see your experience in Y").
+      3. Ask exactly ONE relevant follow-up question that dives deeper into their answer. 
+      4. Do NOT ask generic questions. Be specific to what they just said.
+      5. Speak directly as the interviewer.
+      `;
     }
 
-    const chat = model.startChat({ history: geminiHistory });
-    const result = await chat.sendMessage(prompt);
+    const result = await model.generateContent(prompt);
     const responseText = result.response.text();
 
     return res.json({ success: true, response: responseText });

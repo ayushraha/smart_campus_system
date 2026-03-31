@@ -309,17 +309,28 @@ const AIMockInterview = () => {
   const renderInterviewRoom = () => (
     <div className={`interview-room status-${status}`}>
       <div className="video-main-container">
-        <div className="ai-persona-container">
-          <div className="ai-avatar">
-            <div className={`pulse-ring ${status === 'speaking' ? 'active' : ''}`}></div>
-            <div className={`pulse-ring delay-1 ${status === 'speaking' ? 'active' : ''}`}></div>
-            <div className="ai-icon">🤖</div>
+        {status === 'thinking' && (
+          <div className="thinking-progress">
+            <div className="thinking-progress-bar active"></div>
           </div>
-          <div className="status-badge">
-            {status === 'speaking' && "AI is speaking..."}
-            {status === 'listening' && "Listening to you..."}
-            {status === 'thinking' && "AI is thinking..."}
-            {status === 'idle' && "Ready"}
+        )}
+
+        <div className="ai-persona-container">
+          <div className="ai-avatar-group">
+            <div className="ai-avatar">
+              <div className={`pulse-ring ${status === 'speaking' ? 'active' : ''}`}></div>
+              <div className={`pulse-ring delay-1 ${status === 'speaking' ? 'active' : ''}`}></div>
+              <div className="ai-icon">🤖</div>
+            </div>
+            <div className="ai-meta">
+              <h1 className="manrope-display-lg">AI Interviewer</h1>
+              <div className="status-badge">
+                {status === 'speaking' && "Synthesizing follow-up..."}
+                {status === 'listening' && "Awaiting Candidate..."}
+                {status === 'thinking' && "Analyzing Response..."}
+                {status === 'idle' && "System Ready"}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -328,8 +339,8 @@ const AIMockInterview = () => {
             <video ref={videoRef} autoPlay muted playsInline className="video-feed" />
           ) : (
             <div className="video-placeholder">
-              <CameraOff size={48} />
-              <p>Camera Disabled</p>
+              <CameraOff size={32} />
+              <p>Opt-out: No Video</p>
             </div>
           )}
           
@@ -341,13 +352,13 @@ const AIMockInterview = () => {
 
           <div className="video-controls-overlay">
             <button className={`control-btn ${!micActive ? 'danger' : 'active'}`} onClick={toggleMic}>
-              {micActive ? <Mic size={18} /> : <MicOff size={18} />}
+              {micActive ? <Mic size={16} /> : <MicOff size={16} />}
             </button>
             <button className={`control-btn ${!cameraActive ? 'danger' : 'active'}`} onClick={toggleCamera}>
-              {cameraActive ? <Camera size={18} /> : <CameraOff size={18} />}
+              {cameraActive ? <Camera size={16} /> : <CameraOff size={16} />}
             </button>
             <button className="control-btn danger" onClick={endInterview}>
-              <StopCircle size={18} />
+              <StopCircle size={16} />
             </button>
           </div>
         </div>
@@ -355,8 +366,7 @@ const AIMockInterview = () => {
 
       <div className="transcript-sidebar">
         <div className="sidebar-header">
-          <MessageSquare size={18} />
-          <span>Real-time Transcript</span>
+          <h2 className="manrope-headline-lg">Journal</h2>
         </div>
         <div className="transcript-messages">
           {messages.map((msg, i) => (
@@ -367,16 +377,15 @@ const AIMockInterview = () => {
           <div ref={messagesEndRef} />
         </div>
         
-        {/* Simple text input as fallback */}
         <form className="mini-input" onSubmit={sendMessage}>
           <input 
             type="text" 
             value={inputMessage} 
             onChange={(e) => setInputMessage(e.target.value)} 
-            placeholder="Type if mic fails..."
+            placeholder="Direct Input Override..."
             disabled={loading}
           />
-          <button type="submit" disabled={!inputMessage.trim()}><Send size={16}/></button>
+          <button type="submit" disabled={!inputMessage.trim()}><Send size={14}/></button>
         </form>
       </div>
     </div>
