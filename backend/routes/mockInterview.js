@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { auth } = require('../middleware/auth');
+const StudentProfile = require('../models/StudentProfile');
 
 // Initialize Gemini
 const apiKey = process.env.GOOGLE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
@@ -19,6 +20,26 @@ router.post('/chat', auth, async (req, res) => {
     }
     const { jobRole, interviewType, experienceLevel, conversationHistory } = req.body;
     
+    // Fetch Student Profile for dynamic context
+    let profileContext = "No specific candidate background available.";
+    try {
+      const profile = await StudentProfile.findOne({ userId: req.user.id });
+      if (profile) {
+        const skills = profile.skills?.technical?.join(', ') || 'None listed';
+        const projects = profile.projects?.map(p => `${p.title}: ${p.description}`).join('; ') || 'None listed';
+        const exp = profile.workExperience?.map(w => `${w.jobTitle} at ${w.company}`).join('; ') || 'None listed';
+        
+        profileContext = `
+        CANDIDATE PROFILE DETAILS:
+        - Technical Skills: ${skills}
+        - Projects: ${projects}
+        - Work Experience: ${exp}
+        `;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch student profile for AI context:", err);
+    }
+
     // Default fallback values
     const role = jobRole || 'Software Engineer';
     const type = interviewType || 'Technical';
@@ -26,22 +47,27 @@ router.post('/chat', auth, async (req, res) => {
     const history = conversationHistory || [];
 
     // The system prompt sets the strict persona
-    const systemInstruction = `You are a professional and highly experienced interviewer for the role of ${level} ${role}.
+    const systemInstruction = `You are a professional and highly experienced executive interviewer for the role of ${level} ${role}.
     This is a ${type} interview.
+
+    YOUR KNOWLEDGE BASE:
+    ${profileContext}
     
     CRITICAL RULES:
     1. Do NOT break character. You are the interviewer.
-    2. RESPOND WITH VOICE IN MIND: Keep responses concise (maximum 2-3 sentences). This is for a voice-based interview.
-    3. ADAPTIVE FOLLOW-UPS: Always acknowledge the candidate's last answer and ask a direct, relevant follow-up question based on the content of their response. For example: "Interesting approach to state management in React. How would you handle prop drilling in that same scenario?"
-    4. Ask exactly ONE question at a time.
-    5. Do NOT answer the question for the candidate.
-    6. If the candidate asks to end, say a brief concluding word and state "INTERVIEW_COMPLETE".
-    7. No emojis, no markdown formatting, no "Interviewer:" prefix. Speak as if you are a real person on a call.
-    
-    If this is the FIRST message, welcome the candidate briefly and ask the first question (e.g., "Tell me about yourself").`;
+    2. RESPOND WITH VOICE IN MIND: Keep responses concise (maximum 2-3 sentences).
+    3. ADAPTIVE PERSONA: 
+       - In the FIRST 2 questions, try to reference a specific project or skill from the candidate's profile listed above.
+       - NEVER ask "Standard" HR questions (e.g. "Where do you see yourself in 5 years?"). 
+       - Ask exactly ONE question at a time.
+    4. DYNAMIC FOLLOW-UPS:
+       - 90% of your questions must be based directly on the candidate's last answer.
+       - If they mention a tool, ask about a specific challenge or feature of that tool.
+       - STOP if the candidate answers "INTERVIEW_COMPLETE".
+    5. No emojis, no markdown, no prefixes like "Interviewer:".`;
 
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-pro",
       systemInstruction: systemInstruction
     });
 
@@ -50,10 +76,10 @@ router.post('/chat', auth, async (req, res) => {
         `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.content}`
     ).join('\n\n');
     
-    // Construct the active prompt with FEW-SHOT examples for precision
+    // Construct the active prompt
     let prompt = "";
     if (history.length === 0) {
-      prompt = "This is the start of the interview. Represent as the interviewer and ask the first question (e.g. 'Welcome! Tell me about yourself').";
+      prompt = "This is the start of the interview. Based on the profile context, welcome the candidate and ask a specific opening question related to their role or projects.";
     } else {
       prompt = `
       CURRENT TRANSCRIPT:
@@ -61,19 +87,12 @@ router.post('/chat', auth, async (req, res) => {
       
       INSTRUCTION FOR THE INTERVIEWER:
       1. Carefully review the Candidate's last answer.
-      2. Briefly acknowledge the specific points made in that answer.
-      3. Ask exactly ONE relevant follow-up question that dives deeper into their answer. 
-      4. DO NOT ask generic questions (e.g., "Tell me more about your project"). 
-      5. BE SPECIFIC to the tools, technologies, or challenges they just mentioned.
+      2. Acknowledge what they said (e.g. "Interesting use of X" or "I see how you handled Y").
+      3. Ask exactly ONE deep-dive follow-up question. 
+      4. DO NOT REPEAT a question pattern you used previously in this transcript.
+      5. If the answer was vague, ask for specific metrics or implementation details.
 
-      EXAMPLES OF GOOD FOLLOW-UPS:
-      Candidate: "I prefer React for frontend because of its component-based architecture and hooks like useEffect."
-      Interviewer: "I see you value the hooks system. How would you handle a race condition within a useEffect call that fetches data?"
-
-      Candidate: "I used Python for the backend scraping because of BeautifulSoup's ease of use."
-      Interviewer: "Good choice with BeautifulSoup. How did you handle sites that rely heavily on JavaScript for content rendering?"
-
-      YOUR RESPONSE (Speak directly as the interviewer):
+      YOUR RESPONSE:
       `;
     }
 
