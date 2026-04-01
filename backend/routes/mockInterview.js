@@ -23,17 +23,24 @@ router.post('/chat', auth, async (req, res) => {
     // Fetch Student Profile for dynamic context
     let profileContext = "No specific candidate background available.";
     try {
-      const profile = await StudentProfile.findOne({ userId: req.user.id });
+      const profile = await StudentProfile.findOne({ userId: req.user.id || req.userId });
       if (profile) {
-        const skills = profile.skills?.technical?.join(', ') || 'None listed';
-        const projects = profile.projects?.map(p => `${p.title}: ${p.description}`).join('; ') || 'None listed';
-        const exp = profile.workExperience?.map(w => `${w.jobTitle} at ${w.company}`).join('; ') || 'None listed';
+        const techSkills = profile.skills?.technical?.join(', ') || 'None listed';
+        const softSkills = profile.skills?.soft?.join(', ') || 'None listed';
+        const tools = profile.skills?.tools?.join(', ') || 'None listed';
+        const projects = profile.projects?.map(p => `${p.title}: ${p.description} (Tech: ${p.technologies?.join(', ')})`).join('; ') || 'None listed';
+        const exp = profile.workExperience?.map(w => `${w.jobTitle} at ${w.company} (${w.duration}): ${w.description}`).join('; ') || 'None listed';
+        const edu = profile.education ? `${profile.education.degree} in ${profile.education.field} from ${profile.education.institution}` : 'None listed';
+        const career = profile.careerPreferences?.preferredRoles?.join(', ') || 'None listed';
         
         profileContext = `
-        CANDIDATE PROFILE DETAILS:
-        - Technical Skills: ${skills}
+        CANDIDATE BACKGROUND:
+        - Education: ${edu}
+        - Technical Skills: ${techSkills}
+        - Tools & Technologies: ${tools}
         - Projects: ${projects}
-        - Work Experience: ${exp}
+        - Experience: ${exp}
+        - Targeted Roles: ${career}
         `;
       }
     } catch (err) {
@@ -49,22 +56,17 @@ router.post('/chat', auth, async (req, res) => {
     // The system prompt sets the strict persona
     const systemInstruction = `You are a professional and highly experienced executive interviewer for the role of ${level} ${role}.
     This is a ${type} interview.
-
-    YOUR KNOWLEDGE BASE:
+    
+    CANDIDATE CONTEXT (IMPORTANT):
     ${profileContext}
     
-    CRITICAL RULES:
-    1. Do NOT break character. You are the interviewer.
-    2. RESPOND WITH VOICE IN MIND: Keep responses concise (maximum 2-3 sentences).
-    3. ADAPTIVE PERSONA: 
-       - In the FIRST 2 questions, try to reference a specific project or skill from the candidate's profile listed above.
-       - NEVER ask "Standard" HR questions (e.g. "Where do you see yourself in 5 years?"). 
-       - Ask exactly ONE question at a time.
-    4. DYNAMIC FOLLOW-UPS:
-       - 90% of your questions must be based directly on the candidate's last answer.
-       - If they mention a tool, ask about a specific challenge or feature of that tool.
-       - STOP if the candidate answers "INTERVIEW_COMPLETE".
-    5. No emojis, no markdown, no prefixes like "Interviewer:".`;
+    CONVERSATIONAL STRATEGY:
+    - **Persona**: Authoritative yet professional. Use industry terminology relevant to ${role}.
+    - **Opening**: Reference a specific project or skill from the background above in your first 2 questions.
+    - **Deep Dive**: 90% of your questions must be based on the candidate's LATEST response. Do not follow a static list.
+    - **Voice UI Optimization**: Keep responses extremely concise (max 2 sentences). No markdown or formatting.
+    - **Strict Rule**: Ask exactly ONE question at a time. No "Tell me about yourself" or generic HR clichés.
+    - **Completion**: If the candidate provides a final conclusion or says INTERVIEW_COMPLETE, end the session smoothly.`;
 
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-pro",
@@ -86,11 +88,11 @@ router.post('/chat', auth, async (req, res) => {
       ${transcript}
       
       INSTRUCTION FOR THE INTERVIEWER:
-      1. Carefully review the Candidate's last answer.
-      2. Acknowledge what they said (e.g. "Interesting use of X" or "I see how you handled Y").
-      3. Ask exactly ONE deep-dive follow-up question. 
-      4. DO NOT REPEAT a question pattern you used previously in this transcript.
-      5. If the answer was vague, ask for specific metrics or implementation details.
+      1. Carefully analyze the Candidate's last answer.
+      2. Acknowledge the core technical or behavioral point they made.
+      3. Ask ONE follow-up question that pushes them to explain implementation details, trade-offs, or specific results.
+      4. CRITICAL: Do NOT reuse the same wording or question structure as seen in the transcript history.
+      5. STAY IMMERSIVE. Never mention that you are an AI or using a transcript.
 
       YOUR RESPONSE:
       `;
