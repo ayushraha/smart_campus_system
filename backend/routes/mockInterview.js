@@ -69,7 +69,7 @@ router.post('/chat', auth, async (req, res) => {
     - **Completion**: If the candidate provides a final conclusion or says INTERVIEW_COMPLETE, end the session smoothly.`;
 
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-pro",
+      model: "gemini-1.5-flash",
       systemInstruction: systemInstruction
     });
 
