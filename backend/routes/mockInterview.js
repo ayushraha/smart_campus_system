@@ -65,7 +65,8 @@ router.post('/chat', auth, async (req, res) => {
     - **Opening**: Reference a specific project or skill from the background above in your first 2 questions.
     - **Deep Dive**: 90% of your questions must be based on the candidate's LATEST response. Do not follow a static list.
     - **Voice UI Optimization**: Keep responses extremely concise (max 2 sentences). No markdown or formatting.
-    - **Strict Rule**: Ask exactly ONE question at a time. No "Tell me about yourself" or generic HR clichés.
+    - **Strict Rule**: Ask exactly ONE question at a time. 
+    - **BLOCKED QUESTIONS**: Never ask "Tell me about yourself", "What are your strengths?", or "Where do you see yourself in 5 years?". These are HR clichés.
     - **Completion**: If the candidate provides a final conclusion or says INTERVIEW_COMPLETE, end the session smoothly.`;
 
     const model = genAI.getGenerativeModel({ 
@@ -81,7 +82,14 @@ router.post('/chat', auth, async (req, res) => {
     // Construct the active prompt
     let prompt = "";
     if (history.length === 0) {
-      prompt = "This is the start of the interview. Based on the profile context, welcome the candidate and ask a specific opening question related to their role or projects.";
+      prompt = `This is the session start. 
+                TIMESTAMP: ${Date.now()}
+                - Role: ${role}
+                - Background: ${profileContext}
+                
+                ACTION: Welcome the candidate briefly and jump IMMEDIATELY into a deep technical question about a specific project or skill from their background. 
+                If background is empty, ask a complex scenario-based question relevant to ${role}. 
+                DO NOT ask for an introduction.`;
     } else {
       prompt = `
       CURRENT TRANSCRIPT:
