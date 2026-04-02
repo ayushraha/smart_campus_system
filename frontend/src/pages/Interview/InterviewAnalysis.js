@@ -77,16 +77,7 @@ const InterviewAnalysis = () => {
       ? new Date(interview.scheduledDate).toLocaleDateString()
       : 'N/A';
 
-    const scoreRow = (label, score) => score !== undefined && score !== null
-      ? `<tr>
-           <td style="padding:8px 12px;border-bottom:1px solid #eee;">${label}</td>
-           <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;">
-             <span style="display:inline-block;background:${score >= 80 ? '#d1fae5' : score >= 60 ? '#fef3c7' : '#fee2e2'};
-               color:${score >= 80 ? '#065f46' : score >= 60 ? '#92400e' : '#991b1b'};
-               padding:3px 10px;border-radius:20px;font-weight:700;">${score}/100</span>
-           </td>
-         </tr>`
-      : '';
+    // Score rows removed — scores are not shown in the public report
 
     const listItems = (arr) =>
       (arr || []).map(item => `<li style="margin:4px 0;">${item}</li>`).join('');
@@ -139,18 +130,6 @@ const InterviewAnalysis = () => {
         </div>
 
         ${a ? `
-        <div class="section">
-          <div class="section-title">Performance Scores</div>
-          <table>
-            <thead><tr><th>Category</th><th style="text-align:center;">Score</th></tr></thead>
-            <tbody>
-              ${scoreRow('Overall Score', a.overallScore)}
-              ${scoreRow('Technical Skills', a.technicalScore)}
-              ${scoreRow('Communication', a.communicationScore)}
-              ${scoreRow('Confidence', a.confidenceScore)}
-            </tbody>
-          </table>
-        </div>
 
         ${a.strengths?.length ? `
         <div class="section">
@@ -227,43 +206,19 @@ const InterviewAnalysis = () => {
     }, 500);
   };
 
-  const getScoreColor = (score) => {
-    if (score === undefined || score === null) return '#9ca3af';
-    if (score >= 80) return '#10b981';
-    if (score >= 60) return '#f59e0b';
-    return '#ef4444';
-  };
-
-  const ScoreCircle = ({ score, label }) => {
-    const validScore = score ?? 0;
-    return (
-      <div className="score-circle">
-        <svg width="120" height="120" viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="50" fill="none" stroke="#e5e7eb" strokeWidth="10" />
-          <circle
-            cx="60" cy="60" r="50" fill="none"
-            stroke={getScoreColor(score)}
-            strokeWidth="10"
-            strokeDasharray={`${(validScore / 100) * 314} 314`}
-            strokeLinecap="round"
-            transform="rotate(-90 60 60)"
-          />
-          <text x="60" y="58" textAnchor="middle" fontSize="22" fontWeight="bold" fill="#333">
-            {score !== null && score !== undefined ? score : '—'}
-          </text>
-          <text x="60" y="74" textAnchor="middle" fontSize="11" fill="#888">
-            /100
-          </text>
-        </svg>
-        <p className="score-label">{label}</p>
-      </div>
-    );
-  };
+  // ScoreCircle and getScoreColor removed — performance scores not shown
 
   if (loading) return <div className="loading">Loading analysis...</div>;
 
   const analysis = interview?.analysis;
-  const hasScores = analysis && (analysis.overallScore !== null && analysis.overallScore !== undefined);
+  // Show analysis sections whenever any meaningful content exists (scores removed)
+  const hasAnalysis = analysis && (
+    analysis.strengths?.length > 0 ||
+    analysis.weaknesses?.length > 0 ||
+    analysis.recommendations?.length > 0 ||
+    analysis.aiSummary ||
+    analysis.detailedFeedback
+  );
 
   return (
     <div className="interview-analysis">
@@ -296,20 +251,8 @@ const InterviewAnalysis = () => {
         <p><strong>Status:</strong> <span className={`status-pill ${interview?.status}`}>{interview?.status}</span></p>
       </div>
 
-      {hasScores ? (
+      {hasAnalysis ? (
         <>
-          <div className="scores-section">
-            <h2>Performance Scores</h2>
-            <div className="scores-grid">
-              <ScoreCircle score={analysis.overallScore} label="Overall Score" />
-              <ScoreCircle score={analysis.communicationScore} label="Communication" />
-              <ScoreCircle score={analysis.technicalScore} label="Technical Skills" />
-              <ScoreCircle score={analysis.confidenceScore} label="Confidence" />
-            </div>
-          </div>
-
-          {/* Removed Randomized Metrics (Sentiment, Behavioral, Stats) as per user request */}
-
           {(analysis.strengths?.length > 0 || analysis.weaknesses?.length > 0) && (
             <div className="analysis-grid">
               {analysis.strengths?.length > 0 && (
