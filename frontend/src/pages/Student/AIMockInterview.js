@@ -1,18 +1,114 @@
-import React, { useState, useEffect, useRef } from 'react';
+// frontend/src/pages/Student/AIMockInterview.js
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { 
-  Camera, CameraOff, Mic, MicOff, Send, MessageSquare, 
-  Play, StopCircle, Award, CheckCircle, AlertTriangle 
+import {
+  Camera, CameraOff, Mic, MicOff, Send,
+  Play, StopCircle, CheckCircle, AlertTriangle,
+  RotateCcw, Zap, BrainCircuit, MessageSquare
 } from 'lucide-react';
 import './AIMockInterview.css';
 
+// ─── Interview type metadata ───────────────────────────────────────────────────
+const INTERVIEW_TYPES = [
+  {
+    id: 'Technical',
+    icon: '💻',
+    label: 'Technical',
+    desc: 'Concepts & DSA',
+  },
+  {
+    id: 'Behavioral',
+    icon: '🎯',
+    label: 'Behavioral',
+    desc: 'STAR & Soft Skills',
+  },
+  {
+    id: 'System Design',
+    icon: '🏗️',
+    label: 'System Design',
+    desc: 'Architecture & Scale',
+  },
+];
+
+const EXPERIENCE_LEVELS = ['Internship', 'Entry-Level', 'Mid-Level', 'Senior'];
+
+// ─── Timer Hook ────────────────────────────────────────────────────────────────
+function useTimer(running) {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setSeconds(s => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+  const reset = () => setSeconds(0);
+  const fmt = (s) => {
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const sec = (s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
+  };
+  return { seconds, fmt: fmt(seconds), reset };
+}
+
+// ─── Waveform bars ─────────────────────────────────────────────────────────────
+const WaveformBars = ({ active }) => (
+  <div className="ai-waveform">
+    {Array.from({ length: 9 }).map((_, i) => (
+      <div
+        key={i}
+        className="waveform-bar"
+        style={active
+          ? {
+              background: 'var(--gold)',
+              animation: `wave-anim ${0.5 + Math.random() * 0.5}s ease-in-out infinite alternate`,
+              animationDelay: `${i * 0.07}s`,
+              height: `${10 + Math.random() * 30}px`,
+            }
+          : {}}
+      />
+    ))}
+  </div>
+);
+
+// ─── Score Arc SVG ─────────────────────────────────────────────────────────────
+const ScoreArc = ({ score }) => {
+  const radius = 54;
+  const circ = 2 * Math.PI * radius; // ~339
+  const offset = circ - (score / 100) * circ;
+
+  return (
+    <div className="score-circle-svg">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <defs>
+          <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#c9a227" />
+            <stop offset="100%" stopColor="#e8c44a" />
+          </linearGradient>
+        </defs>
+        <circle cx="70" cy="70" r={radius} className="score-circle-bg" />
+        <circle
+          cx="70"
+          cy="70"
+          r={radius}
+          className="score-circle-fill"
+          style={{ strokeDashoffset: offset }}
+        />
+      </svg>
+      <div className="score-value-overlay">
+        <div className="score-number">{score}</div>
+        <div className="score-denom">/ 100</div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 const AIMockInterview = () => {
-  // Phase: 'setup', 'interview', 'feedback'
-  const [phase, setPhase] = useState('setup');
+  // Phase management
+  const [phase, setPhase] = useState('setup');  // 'setup' | 'interview' | 'feedback'
   const [loading, setLoading] = useState(false);
 
-  // Setup state
+  // Setup config
   const [jobRole, setJobRole] = useState('Software Engineer');
   const [experienceLevel, setExperienceLevel] = useState('Entry-Level');
   const [interviewType, setInterviewType] = useState('Technical');
@@ -20,422 +116,664 @@ const AIMockInterview = () => {
   // Interview state
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isSTTActive, setIsSTTActive] = useState(false);
-  const [isTTSActive, setIsTTSActive] = useState(true);
-  const [status, setStatus] = useState('idle'); // 'idle', 'speaking', 'listening', 'thinking'
+  const [status, setStatus] = useState('idle'); // 'idle' | 'speaking' | 'listening' | 'thinking'
+  const [questionCount, setQuestionCount] = useState(0);
+  const MAX_QUESTIONS = 8;
 
-  // Media state
+  // STT / TTS
+  const [isListening, setIsListening] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+
+  // Media
   const [stream, setStream] = useState(null);
-  const [cameraActive, setCameraActive] = useState(true);
-  const [micActive, setMicActive] = useState(true);
+  const [cameraOn, setCameraOn] = useState(true);
+  const [micOn, setMicOn] = useState(true);
   const videoRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  // Feedback state
+  // Feedback
   const [evaluation, setEvaluation] = useState(null);
 
-  // Speech Recognition (Web Speech API)
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = SpeechRecognition ? new SpeechRecognition() : null;
-  if (recognition) {
-    recognition.continuous = false;
-    recognition.interimResults = false;
-  }
+  // Timer
+  const timer = useTimer(phase === 'interview');
 
-  // Auto-scroll chat
+  // Speech API refs (stable across renders)
+  const recognitionRef = useRef(null);
+  const synthRef = useRef(window.speechSynthesis);
+
+  // ── Setup Recognition once ────────────────────────────────────────────────
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const rec = new SR();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = 'en-US';
+    recognitionRef.current = rec;
+  }, []);
+
+  // ── Auto-scroll ───────────────────────────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle webcam
+  // ── Webcam ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (phase === 'interview' && cameraActive && !stream) {
-      startMedia();
+    if (phase === 'interview' && cameraOn && !stream) startMedia();
+    // eslint-disable-next-line
+  }, [phase]);
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
     }
-  }, [phase, cameraActive]);
+  }, [stream]);
+
+  // Cleanup on unmount
+  useEffect(() => () => stopMedia(), []); // eslint-disable-line
 
   const startMedia = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    } catch (err) {
-      console.error("Failed to get media", err);
-      toast.warning("Camera/Microphone access denied. You can still use text chat.");
-      setCameraActive(false);
-      setMicActive(false);
+      const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setStream(s);
+    } catch {
+      toast.warning('Camera/Mic access denied. You can still type your answers.');
+      setCameraOn(false);
+      setMicOn(false);
     }
   };
 
   const stopMedia = () => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach(t => t.stop());
       setStream(null);
     }
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => stopMedia();
-  }, [stream]);
-
   const toggleCamera = () => {
-    if (stream) {
-      stream.getVideoTracks().forEach(track => track.enabled = !cameraActive);
-    }
-    setCameraActive(!cameraActive);
+    stream?.getVideoTracks().forEach(t => (t.enabled = !cameraOn));
+    setCameraOn(p => !p);
   };
 
   const toggleMic = () => {
-    if (stream) {
-      stream.getAudioTracks().forEach(track => track.enabled = !micActive);
-    }
-    setMicActive(!micActive);
+    stream?.getAudioTracks().forEach(t => (t.enabled = !micOn));
+    setMicOn(p => !p);
   };
 
-  // Text to Speech
-  const speakText = (text, onComplete) => {
-    if (!isTTSActive || !window.speechSynthesis) {
-        if (onComplete) onComplete();
-        return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    const voices = window.speechSynthesis.getVoices();
-    const engVoice = voices.find(v => v.lang.includes('en-US')) || voices[0];
-    if (engVoice) utterance.voice = engVoice;
-    
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+  // ── TTS ───────────────────────────────────────────────────────────────────
+  const speak = useCallback((text, onDone) => {
+    const synth = synthRef.current;
+    if (!ttsEnabled || !synth) { onDone?.(); return; }
 
-    utterance.onstart = () => setStatus('speaking');
-    utterance.onend = () => {
-        setStatus('listening');
-        if (onComplete) onComplete();
+    synth.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+
+    const loadVoice = () => {
+      const voices = synth.getVoices();
+      const en = voices.find(v => v.lang === 'en-US' && v.name.includes('Google'))
+        || voices.find(v => v.lang.startsWith('en'))
+        || voices[0];
+      if (en) utter.voice = en;
     };
 
-    window.speechSynthesis.speak(utterance);
+    loadVoice();
+    if (synth.getVoices().length === 0) {
+      synth.onvoiceschanged = loadVoice;
+    }
+
+    utter.rate = 0.95;
+    utter.pitch = 1.0;
+    utter.onstart = () => setStatus('speaking');
+    utter.onend = () => { setStatus('listening'); onDone?.(); };
+    utter.onerror = () => { setStatus('idle'); onDone?.(); };
+
+    synth.speak(utter);
+  }, [ttsEnabled]);
+
+  // ── STT ────────────────────────────────────────────────────────────────────
+  const startListening = useCallback(() => {
+    const rec = recognitionRef.current;
+    if (!rec) { toast.error('Speech recognition not supported in this browser.'); return; }
+
+    rec.onresult = (e) => {
+      const t = e.results[0][0].transcript;
+      setInputMessage(t);
+      setIsListening(false);
+      setTimeout(() => sendMessage(null, t), 300);
+    };
+    rec.onerror = () => setIsListening(false);
+    rec.onend = () => setIsListening(false);
+
+    try {
+      rec.start();
+      setIsListening(true);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []); // eslint-disable-line
+
+  const stopListening = () => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
   };
 
-  // Speech to Text
-  const toggleListening = (auto = false) => {
-    if (!recognition) {
-      toast.error("Speech recognition is not supported in this browser.");
-      return;
-    }
-
-    if (isSTTActive) {
-      recognition.stop();
-      setIsSTTActive(false);
-    } else {
-      try {
-        recognition.start();
-        setIsSTTActive(true);
-        if (!auto) toast.info("Listening... Speak now");
-      } catch(e) {
-        console.error(e);
-      }
-    }
+  const handleMicToggle = () => {
+    if (isListening) stopListening();
+    else startListening();
   };
 
-  if (recognition) {
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setInputMessage(transcript);
-      setIsSTTActive(false);
-      // Auto-send if it was a voice capture
-      if (status === 'listening') {
-        setTimeout(() => sendMessage(null, transcript), 500);
-      }
-    };
-    recognition.onerror = (event) => {
-      console.error("STT Error:", event.error);
-      setIsSTTActive(false);
-      if (status === 'listening') setStatus('idle');
-    };
-    recognition.onend = () => {
-      setIsSTTActive(false);
-    };
-  }
-
-  // --- API Integrations ---
+  // ── API calls ──────────────────────────────────────────────────────────────
+  const apiPost = async (endpoint, data) => {
+    const token = localStorage.getItem('token');
+    return axios.post(endpoint, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  };
 
   const startInterview = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post('/api/mock-interview/chat', {
+      const res = await apiPost('/api/mock-interview/chat', {
         jobRole,
         interviewType,
         experienceLevel,
-        conversationHistory: []
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+        conversationHistory: [],
       });
 
-      if (response.data.success) {
-        const welcomeMessage = { role: 'ai', content: response.data.response };
-        setMessages([welcomeMessage]);
+      if (res.data.success) {
+        const firstMsg = { role: 'ai', content: res.data.response };
+        setMessages([firstMsg]);
+        setQuestionCount(1);
         setPhase('interview');
-        speakText(response.data.response, () => {
-            toggleListening(true);
-        });
+        speak(res.data.response, startListening);
       }
-    } catch (error) {
-      toast.error('Failed to start interview.');
-      console.error(error);
+    } catch {
+      toast.error('Failed to start the interview. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const sendMessage = async (e, voiceContent = null) => {
+  const sendMessage = async (e, voiceText = null) => {
     if (e) e.preventDefault();
-    const userMsg = voiceContent || inputMessage;
-    if (!userMsg.trim()) return;
+    const userInput = (voiceText ?? inputMessage).trim();
+    if (!userInput || loading) return;
 
     setInputMessage('');
-    const newHistory = [...messages, { role: 'user', content: userMsg }];
-    setMessages(newHistory);
-    setLoading(true);
     setStatus('thinking');
 
+    const newHistory = [...messages, { role: 'user', content: userInput }];
+    setMessages(newHistory);
+    setLoading(true);
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post('/api/mock-interview/chat', {
+      const res = await apiPost('/api/mock-interview/chat', {
         jobRole,
         interviewType,
         experienceLevel,
-        conversationHistory: newHistory
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+        conversationHistory: newHistory,
+        questionNumber: questionCount,
+        maxQuestions: MAX_QUESTIONS,
       });
 
-      if (response.data.success) {
-        setMessages([...newHistory, { role: 'ai', content: response.data.response }]);
-        speakText(response.data.response, () => {
-          toggleListening(true);
-        });
+      if (res.data.success) {
+        const aiMsg = { role: 'ai', content: res.data.response };
+        setMessages(h => [...h, aiMsg]);
+        setQuestionCount(q => q + 1);
+
+        // If AI signals end or we've hit max questions, end automatically
+        if (
+          questionCount >= MAX_QUESTIONS ||
+          res.data.response.toLowerCase().includes('interview is now complete') ||
+          res.data.response.toLowerCase().includes('thank you for your time')
+        ) {
+          speak(res.data.response, () => endInterview([...newHistory, aiMsg]));
+        } else {
+          speak(res.data.response, startListening);
+        }
       }
-    } catch (error) {
-      toast.error('Failed to send message.');
+    } catch {
+      toast.error('Failed to get response. Please try again.');
+      setStatus('idle');
     } finally {
       setLoading(false);
     }
   };
 
-  const endInterview = async () => {
-    if (messages.length < 3) {
-      toast.warning("Interview was too short to evaluate.");
-      stopMedia();
-      setPhase('setup');
-      setMessages([]);
+  const endInterview = async (finalHistory = null) => {
+    const historyToEval = finalHistory || messages;
+    if (historyToEval.filter(m => m.role === 'user').length < 2) {
+      toast.warning('Interview too short to evaluate. Please answer at least 2 questions.');
       return;
     }
 
+    synthRef.current?.cancel();
     setLoading(true);
-    toast.info("Evaluating interview...", { autoClose: false, toastId: 'eval' });
+    toast.info('Generating your performance report…', { autoClose: false, toastId: 'eval' });
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post('/api/mock-interview/evaluate', {
+      const res = await apiPost('/api/mock-interview/evaluate', {
         jobRole,
         interviewType,
         experienceLevel,
-        conversationHistory: messages
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+        conversationHistory: historyToEval,
       });
 
-      if (response.data.success) {
-        setEvaluation(response.data.evaluation);
+      if (res.data.success) {
+        setEvaluation(res.data.evaluation);
         stopMedia();
         setPhase('feedback');
         toast.dismiss('eval');
-        toast.success("Evaluation complete!");
+        toast.success('Evaluation complete!');
       }
-    } catch (error) {
-      toast.error('Failed to evaluate interview.');
+    } catch {
+      toast.error('Failed to generate report.');
       toast.dismiss('eval');
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Render Functions ---
+  // ── Last AI question for display ──────────────────────────────────────────
+  const lastAiMessage = [...messages].reverse().find(m => m.role === 'ai');
 
+  // ── Keyboard shortcut ─────────────────────────────────────────────────────
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(e);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  RENDER: SETUP
+  // ═══════════════════════════════════════════════════════════════════════════
   const renderSetup = () => (
-    <div className="setup-card">
-      <h1>AI Mock Interview</h1>
-      <p>Configure your mock interview. Our Gemini AI will roleplay as an expert recruiter to help you practice.</p>
-
-      <div className="form-group">
-        <label>Target Job Role</label>
-        <input 
-          type="text" 
-          value={jobRole} 
-          onChange={(e) => setJobRole(e.target.value)} 
-          placeholder="e.g. Frontend Developer, Data Analyst"
-        />
+    <div className="setup-wrapper">
+      <div className="setup-brand">
+        <div className="setup-brand-badge">
+          <Zap size={12} /> AI-Powered Interview Simulator
+        </div>
+        <h1>
+          Ace Your Next <span>Interview</span>
+        </h1>
+        <p>
+          Practice with a real-time AI interviewer that adapts to your profile,
+          asks deep follow-up questions, and provides comprehensive performance feedback.
+        </p>
       </div>
 
-      <div className="form-group">
-        <label>Experience Level</label>
-        <select value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)}>
-          <option value="Internship">Internship</option>
-          <option value="Entry-Level">Entry-Level</option>
-          <option value="Mid-Level">Mid-Level</option>
-          <option value="Senior">Senior</option>
-        </select>
-      </div>
+      <div className="setup-card">
+        <div className="setup-section-title">Position Details</div>
 
-      <div className="form-group">
-        <label>Interview Focus</label>
-        <select value={interviewType} onChange={(e) => setInterviewType(e.target.value)}>
-          <option value="Technical">Technical (Concepts & Problem Solving)</option>
-          <option value="Behavioral">Behavioral (Leadership & Culture Fit)</option>
-          <option value="System Design">System Design</option>
-        </select>
-      </div>
+        <div className="form-grid">
+          <div className="form-field full-width">
+            <label>Target Role</label>
+            <input
+              type="text"
+              value={jobRole}
+              onChange={e => setJobRole(e.target.value)}
+              placeholder="e.g. Frontend Developer, Data Analyst, ML Engineer"
+            />
+          </div>
 
-      <button className="btn-start" onClick={startInterview} disabled={loading}>
-        {loading ? 'Starting AI Engine...' : <span><Play size={20} /> Start Interview</span>}
-      </button>
+          <div className="form-field">
+            <label>Experience Level</label>
+            <select value={experienceLevel} onChange={e => setExperienceLevel(e.target.value)}>
+              {EXPERIENCE_LEVELS.map(l => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label>Duration</label>
+            <select disabled>
+              <option>~{MAX_QUESTIONS} Questions</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="setup-divider" />
+
+        <div className="setup-section-title">Interview Focus</div>
+
+        <div className="interview-type-grid">
+          {INTERVIEW_TYPES.map(t => (
+            <div
+              key={t.id}
+              className={`type-card ${interviewType === t.id ? 'selected' : ''}`}
+              onClick={() => setInterviewType(t.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && setInterviewType(t.id)}
+            >
+              <div className="type-icon">{t.icon}</div>
+              <div className="type-label">{t.label}</div>
+              <div className="type-desc">{t.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          className="btn-start-interview"
+          onClick={startInterview}
+          disabled={loading || !jobRole.trim()}
+          id="start-interview-btn"
+        >
+          {loading ? (
+            <><div className="spinner" /> Initializing AI Engine…</>
+          ) : (
+            <><Play size={16} /> Begin Interview</>
+          )}
+        </button>
+      </div>
     </div>
   );
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  RENDER: INTERVIEW ROOM
+  // ═══════════════════════════════════════════════════════════════════════════
   const renderInterviewRoom = () => (
-    <div className={`interview-room status-${status}`}>
-      <div className="video-main-container">
-        {status === 'thinking' && (
-          <div className="thinking-progress">
-            <div className="thinking-progress-bar active"></div>
-          </div>
-        )}
+    <div className="interview-room">
+      {/* Top progress bar */}
+      <div className="interview-progress-bar">
+        <div
+          className="interview-progress-fill"
+          style={{ width: `${(questionCount / MAX_QUESTIONS) * 100}%` }}
+        />
+      </div>
 
-        <div className="ai-persona-container">
-          <div className="ai-avatar-group">
-            <div className="ai-avatar">
-              <div className={`pulse-ring ${status === 'speaking' ? 'active' : ''}`}></div>
-              <div className={`pulse-ring delay-1 ${status === 'speaking' ? 'active' : ''}`}></div>
-              <div className="ai-icon">🏛️</div>
+      {/* ── LEFT: Stage ─────────────────────────────────── */}
+      <div className="interview-stage">
+        {/* Header */}
+        <div className="interview-header">
+          <div className="interview-meta">
+            <div className="meta-chip">{interviewType}</div>
+            <div className="meta-chip">{experienceLevel}</div>
+            <div className="meta-chip">{jobRole}</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div className="live-dot">Live</div>
+            <div className="interview-timer">{timer.fmt}</div>
+          </div>
+        </div>
+
+        {/* AI Avatar */}
+        <div className="ai-presenter">
+          <div className={`ai-avatar-shell ${status === 'speaking' ? 'speaking' : ''}`}>
+            <div className="ai-ring ai-ring-1" />
+            <div className="ai-ring ai-ring-2" />
+            <div className="ai-ring ai-ring-3" />
+            <div className="ai-avatar-core">🧠</div>
+          </div>
+
+          <WaveformBars active={status === 'speaking'} />
+
+          <div className="ai-status-display">
+            <div className="ai-name">Aurelian · AI Interviewer</div>
+            <div className={`ai-status-pill ${status}`}>
+              {status === 'speaking' && '🗣 Speaking'}
+              {status === 'thinking' && '⚙ Analyzing Response'}
+              {status === 'listening' && '🎙 Awaiting Your Answer'}
+              {status === 'idle' && '◉ Ready'}
             </div>
-            <div className="ai-meta">
-              <h1 className="playfair-headline">Aurelian Assistant</h1>
-              <div className="status-badge">
-                {status === 'speaking' && "Synthesizing Insight..."}
-                {status === 'listening' && "Awaiting Candidate..."}
-                {status === 'thinking' && "Analyzing Response..."}
-                {status === 'idle' && "System Ready"}
+          </div>
+        </div>
+
+        {/* Current question card */}
+        <div className="current-question-card">
+          <div className="cq-label">
+            <BrainCircuit size={12} />
+            Question {questionCount} of {MAX_QUESTIONS}
+          </div>
+          {status === 'thinking' ? (
+            <div className="cq-thinking">
+              <div className="cq-thinking-dot" />
+              <div className="cq-thinking-dot" />
+              <div className="cq-thinking-dot" />
+              Formulating next question…
+            </div>
+          ) : (
+            <div className="cq-text">
+              {lastAiMessage?.content || 'Waiting for the interviewer…'}
+            </div>
+          )}
+        </div>
+
+        {/* Candidate video */}
+        <div className="candidate-video-panel">
+          {cameraOn && stream ? (
+            <video ref={videoRef} autoPlay muted playsInline />
+          ) : (
+            <div className="video-off-placeholder">
+              <CameraOff size={24} />
+              <span>Camera Off</span>
+            </div>
+          )}
+          <div className="candidate-video-controls">
+            <button className={`vid-btn ${!micOn ? 'danger' : ''}`} onClick={toggleMic} title="Toggle Mic">
+              {micOn ? <Mic size={14} /> : <MicOff size={14} />}
+            </button>
+            <button className={`vid-btn ${!cameraOn ? 'danger' : ''}`} onClick={toggleCamera} title="Toggle Camera">
+              {cameraOn ? <Camera size={14} /> : <CameraOff size={14} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Voice listening indicator */}
+        <div className={`user-voice-indicator ${isListening ? 'active' : ''}`}>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className={`voice-bar ${isListening ? 'active' : ''}`} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── RIGHT: Transcript Panel ──────────────────────── */}
+      <div className="transcript-panel">
+        <div className="transcript-header">
+          <div className="transcript-title-row">
+            <div className="transcript-title">Interview Log</div>
+            <div className="transcript-count">{messages.length} msgs</div>
+          </div>
+          <div className="q-progress-container">
+            <div
+              className="q-progress-bar"
+              style={{ width: `${(questionCount / MAX_QUESTIONS) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="transcript-messages">
+          {messages.map((msg, i) => (
+            <div key={i} className={`msg-entry ${msg.role}`}>
+              <div className="msg-sender">
+                {msg.role === 'ai' ? '🧠 Aurelian' : '👤 You'}
+              </div>
+              <div className="msg-bubble">{msg.content}</div>
+            </div>
+          ))}
+          {loading && status === 'thinking' && (
+            <div className="msg-entry ai">
+              <div className="msg-sender">🧠 Aurelian</div>
+              <div className="msg-bubble">
+                <div className="cq-thinking" style={{ padding: 0 }}>
+                  <div className="cq-thinking-dot" />
+                  <div className="cq-thinking-dot" />
+                  <div className="cq-thinking-dot" />
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="input-area">
+          <div className="input-row">
+            <textarea
+              ref={textareaRef}
+              className="answer-input"
+              value={inputMessage}
+              onChange={e => setInputMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your answer… (Enter to send, Shift+Enter for new line)"
+              disabled={loading}
+              rows={2}
+            />
+            <button
+              className={`btn-mic ${isListening ? 'active' : ''}`}
+              onClick={handleMicToggle}
+              title={isListening ? 'Stop listening' : 'Start voice input'}
+            >
+              {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+            </button>
+            <button
+              className="btn-send"
+              onClick={sendMessage}
+              disabled={!inputMessage.trim() || loading}
+              title="Send Answer"
+            >
+              <Send size={16} />
+            </button>
+          </div>
+          <div className="input-actions">
+            <span className="input-hint">⌨ Enter to send · Shift+Enter for new line</span>
+            <button
+              className="btn-end-interview"
+              onClick={() => endInterview()}
+              disabled={loading}
+            >
+              <StopCircle size={12} /> End & Evaluate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  RENDER: FEEDBACK
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderFeedback = () => {
+    if (!evaluation) return null;
+    const { overallScore, communicationScore, technicalScore, strengths, weaknesses, feedback } = evaluation;
+
+    return (
+      <div className="feedback-wrapper">
+        <div className="feedback-hero">
+          <div className="feedback-badge">
+            <CheckCircle size={12} /> Report Ready
+          </div>
+          <h1>Interview Performance Report</h1>
+          <p>{experienceLevel} {jobRole} — {interviewType} · {timer.fmt} session</p>
+        </div>
+
+        {/* Scores */}
+        <div className="score-arc-section">
+          <div className="score-main-card">
+            <ScoreArc score={overallScore} />
+            <div className="score-label-main">Overall Score</div>
+          </div>
+
+          <div className="score-main-card" style={{ flex: 2 }}>
+            <div className="sub-scores">
+              <div className="sub-score-item">
+                <div className="sub-score-row">
+                  <span className="sub-score-label">Communication</span>
+                  <span className="sub-score-val">{communicationScore}<span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>/100</span></span>
+                </div>
+                <div className="sub-score-track">
+                  <div className="sub-score-fill comm" style={{ width: `${communicationScore}%` }} />
+                </div>
+              </div>
+
+              <div className="sub-score-item">
+                <div className="sub-score-row">
+                  <span className="sub-score-label">Technical Depth</span>
+                  <span className="sub-score-val">{technicalScore}<span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>/100</span></span>
+                </div>
+                <div className="sub-score-track">
+                  <div className="sub-score-fill tech" style={{ width: `${technicalScore}%` }} />
+                </div>
+              </div>
+
+              <div className="sub-score-item">
+                <div className="sub-score-row">
+                  <span className="sub-score-label">Problem-Solving</span>
+                  <span className="sub-score-val">
+                    {Math.round((communicationScore + technicalScore) / 2)}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>/100</span>
+                  </span>
+                </div>
+                <div className="sub-score-track">
+                  <div
+                    className="sub-score-fill prob"
+                    style={{ width: `${Math.round((communicationScore + technicalScore) / 2)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 8, padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Hire Likelihood
+                </div>
+                <div style={{
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  color: overallScore >= 75 ? 'var(--success)' : overallScore >= 55 ? 'var(--warn)' : 'var(--danger)'
+                }}>
+                  {overallScore >= 75 ? '✅ Strong Candidate' : overallScore >= 55 ? '⚠ Borderline — Needs Improvement' : '❌ Not Ready Yet'}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="candidate-video-wrapper">
-          {cameraActive && stream ? (
-            <video ref={videoRef} autoPlay muted playsInline className="video-feed" />
-          ) : (
-            <div className="video-placeholder">
-              <CameraOff size={32} />
-              <p>Opt-out: No Video</p>
-            </div>
-          )}
-          
-          <div className="user-voice-indicator">
-             <div className={`bar ${isSTTActive ? 'animating' : ''}`}></div>
-             <div className={`bar ${isSTTActive ? 'animating' : ''}`}></div>
-             <div className={`bar ${isSTTActive ? 'animating' : ''}`}></div>
-          </div>
-
-          <div className="video-controls-overlay">
-            <button className={`control-btn ${!micActive ? 'danger' : 'active'}`} onClick={toggleMic}>
-              {micActive ? <Mic size={16} /> : <MicOff size={16} />}
-            </button>
-            <button className={`control-btn ${!cameraActive ? 'danger' : 'active'}`} onClick={toggleCamera}>
-              {cameraActive ? <Camera size={16} /> : <CameraOff size={16} />}
-            </button>
-            <button className="control-btn danger" onClick={endInterview}>
-              <StopCircle size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="transcript-sidebar">
-        <div className="sidebar-header">
-          <h2 className="playfair-headline-sm">Journal</h2>
-        </div>
-        <div className="transcript-messages">
-          {messages.map((msg, i) => (
-            <div key={i} className={`msg-bubble ${msg.role}`}>
-              <div className="msg-text">{msg.content}</div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-        
-        <form className="mini-input" onSubmit={sendMessage}>
-          <input 
-            type="text" 
-            value={inputMessage} 
-            onChange={(e) => setInputMessage(e.target.value)} 
-            placeholder="Document point of concern..."
-            disabled={loading}
-          />
-          <button type="submit" disabled={!inputMessage.trim()}><Send size={14}/></button>
-        </form>
-      </div>
-    </div>
-  );
-
-  const renderFeedback = () => {
-    if (!evaluation) return null;
-    return (
-      <div className="feedback-card">
-        <div className="feedback-header">
-          <h2>Interview Evaluation Complete</h2>
-          <p>Role: {experienceLevel} {jobRole} ({interviewType})</p>
+        {/* Summary */}
+        <div className="feedback-summary-card">
+          <h3>📋 Recruiter's Summary</h3>
+          <p>{feedback}</p>
         </div>
 
-        <div className="score-circle">
-          {evaluation.overallScore}
-          <span>/ 100</span>
-        </div>
-
-        <div className="overall-feedback" style={{ marginBottom: '30px' }}>
-          <strong>Summary: </strong> {evaluation.feedback}
-        </div>
-
+        {/* Strengths & Weaknesses */}
         <div className="feedback-grid">
-          <div className="feedback-section" style={{ borderLeft: '4px solid #22c55e' }}>
-            <h3 style={{ color: '#16a34a' }}><CheckCircle size={20}/> Strengths</h3>
+          <div className="feedback-card fc-strengths">
+            <h3><CheckCircle size={14} /> Strengths</h3>
             <ul>
-              {evaluation.strengths.map((str, i) => <li key={i}>{str}</li>)}
+              {strengths?.map((s, i) => <li key={i}>{s}</li>)}
             </ul>
           </div>
-          <div className="feedback-section" style={{ borderLeft: '4px solid #f59e0b' }}>
-            <h3 style={{ color: '#d97706' }}><AlertTriangle size={20}/> Areas to Improve</h3>
+          <div className="feedback-card fc-weaknesses">
+            <h3><AlertTriangle size={14} /> Areas to Improve</h3>
             <ul>
-              {evaluation.weaknesses.map((wk, i) => <li key={i}>{wk}</li>)}
+              {weaknesses?.map((w, i) => <li key={i}>{w}</li>)}
             </ul>
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '20px', background: '#f8fafc', padding: '15px', borderRadius: '12px' }}>
-          <div><strong>Communication:</strong> {evaluation.communicationScore}/100</div>
-          <div><strong>Technical:</strong> {evaluation.technicalScore}/100</div>
-        </div>
-
-        <button className="btn-restart" onClick={() => { setPhase('setup'); setMessages([]); }}>
-          Try Another Interview
+        {/* Retry */}
+        <button
+          className="btn-restart"
+          onClick={() => {
+            setPhase('setup');
+            setMessages([]);
+            setEvaluation(null);
+            setQuestionCount(0);
+            setStatus('idle');
+            timer.reset();
+          }}
+        >
+          <RotateCcw size={16} /> Try Another Interview
         </button>
       </div>
     );
   };
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  ROOT
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div className="mock-interview-container">
       {phase === 'setup' && renderSetup()}
