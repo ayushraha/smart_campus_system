@@ -601,7 +601,7 @@ const AIMockInterview = () => {
             <TrendingUp size={16}/>
             You performed better than&nbsp;
             <strong style={{ color: 'var(--gold)' }}>{ev.industryPercentile}%</strong>
-            &nbsp;of candidates applying for {level || experienceLevel} {jobRole} roles.
+            &nbsp;of candidates applying for {experienceLevel} {jobRole} roles.
           </div>
         )}
 
