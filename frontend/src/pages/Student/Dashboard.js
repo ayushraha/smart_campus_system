@@ -11,6 +11,7 @@ import Overview from './Overview';
 import Jobs from './Jobs';
 import Applications from './Applications';
 import Profile from './Profile';
+import ViewProfile from './ViewProfile';
 import Interviews from './Interviews';
 import ResumeList from './ResumeList';
 import ResumeBuilder from './ResumeBuilder';
@@ -84,9 +85,9 @@ const Dashboard = () => {
           </Link>
 
           <Link 
-            to="/student/profile" 
-            className={activeTab === 'profile' ? 'active' : ''}
-            onClick={() => setActiveTab('profile')}
+            to="/student/view-profile" 
+            className={activeTab === 'view-profile' ? 'active' : ''}
+            onClick={() => setActiveTab('view-profile')}
           >
             <FiUser /> View Profile
           </Link>
@@ -216,6 +217,7 @@ const Dashboard = () => {
           <Route path="/resume/:resumeId" element={<ResumeBuilder />} />
           <Route path="/profile-form" element={<StudentProfileForm />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/view-profile" element={<ViewProfile />} />
 
           {/* Placement Routes */}
           <Route path="/jobs" element={<Jobs />} />
