@@ -234,7 +234,7 @@ const InterviewAnalysis = () => {
             className="btn-generate"
           >
             <FiRefreshCw className={generating ? 'spinning' : ''} />
-            {generating ? 'Generating...' : hasScores ? 'Refresh AI Insights' : 'Generate AI Analysis'}
+            {generating ? 'Generating...' : hasAnalysis ? 'Refresh AI Insights' : 'Generate AI Analysis'}
           </button>
           <button onClick={downloadReport} className="btn-download">
             <FiDownload /> Download Report

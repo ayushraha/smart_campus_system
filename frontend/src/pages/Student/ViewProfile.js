@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Edit3, Download, Mail, Phone, MapPin, Calendar, User,
-  GraduationCap, Code2, Wrench, Briefcase, FolderOpen,
-  Award, Link2, Target, Globe, Github, Linkedin,
+  GraduationCap, Code2, Wrench, Briefcase,
+  Award, Target, Globe, Github, Linkedin,
   ExternalLink, CheckCircle, Loader, AlertCircle
 } from 'lucide-react';
 import './ViewProfile.css';
