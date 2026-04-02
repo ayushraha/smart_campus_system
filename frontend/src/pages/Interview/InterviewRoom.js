@@ -51,6 +51,7 @@ const InterviewRoom = () => {
   const roomVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const mediaStreamRef = useRef(null);
+  const remoteStreamRef = useRef(null);
   const autoSaveTimerRef = useRef(null);
   const socketRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -101,9 +102,15 @@ const InterviewRoom = () => {
 
   // Reassign stream to in-room video element once inCall becomes true
   useEffect(() => {
-    if (inCall && roomVideoRef.current && mediaStreamRef.current) {
-      roomVideoRef.current.srcObject = mediaStreamRef.current;
-      roomVideoRef.current.play().catch(err => console.warn('Room video play error:', err));
+    if (inCall) {
+      if (roomVideoRef.current && mediaStreamRef.current) {
+        roomVideoRef.current.srcObject = mediaStreamRef.current;
+        roomVideoRef.current.play().catch(err => console.warn('Room video play error:', err));
+      }
+      if (remoteVideoRef.current && remoteStreamRef.current) {
+        remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        remoteVideoRef.current.play().catch(err => console.warn('Remote video play error:', err));
+      }
     }
   }, [inCall]);
 
@@ -182,8 +189,10 @@ const InterviewRoom = () => {
 
     pc.ontrack = (event) => {
       console.log('📡 Received remote track:', event.streams[0]);
+      remoteStreamRef.current = event.streams[0];
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = event.streams[0];
+        remoteVideoRef.current.play().catch(err => console.warn('Remote video play error:', err));
       }
     };
 
