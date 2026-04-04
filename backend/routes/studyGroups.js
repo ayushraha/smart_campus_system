@@ -4,11 +4,39 @@ const router = express.Router();
 const { auth, checkRole, checkApproved } = require('../middleware/auth');
 const StudyGroup = require('../models/StudyGroup');
 const StudyGroupMessage = require('../models/StudyGroupMessage');
+const Application = require('../models/Application');
 
-// All routes require auth
+// All routes require auth + account approved
 router.use(auth, checkApproved);
 
-// ─── GET all active groups (with optional company filter) ─────────────────────
+// ─── Helper: check if student is shortlisted in any application ────────────────
+const checkShortlisted = async (userId) => {
+  const app = await Application.findOne({
+    studentId: userId,
+    status: { $in: ['shortlisted', 'interview', 'selected'] }
+  });
+  return !!app;
+};
+
+// ─── Middleware: only shortlisted students can interact ───────────────────────
+const requireShortlisted = async (req, res, next) => {
+  try {
+    const eligible = await checkShortlisted(req.userId);
+    if (!eligible) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access restricted. Only shortlisted students can create, join, or chat in study groups.',
+        reason: 'not_shortlisted'
+      });
+    }
+    next();
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── GET all active groups — visible to all authenticated students ─────────────
+// (viewing list is open, but joining/chatting requires shortlisted status)
 router.get('/', async (req, res) => {
   try {
     const { company, search } = req.query;
@@ -28,7 +56,10 @@ router.get('/', async (req, res) => {
       .populate('members', 'name')
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, groups });
+    // Also return current user's shortlist eligibility so frontend can show/hide controls
+    const isShortlisted = await checkShortlisted(req.userId);
+
+    res.json({ success: true, groups, isShortlisted });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -46,14 +77,16 @@ router.get('/:id', async (req, res) => {
     }
 
     const isMember = group.members.some(m => m._id.toString() === req.userId.toString());
-    res.json({ success: true, group, isMember });
+    const isShortlisted = await checkShortlisted(req.userId);
+
+    res.json({ success: true, group, isMember, isShortlisted });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// ─── POST create a new group (students only) ──────────────────────────────────
-router.post('/', checkRole('student'), async (req, res) => {
+// ─── POST create a new group — shortlisted students only ─────────────────────
+router.post('/', checkRole('student'), requireShortlisted, async (req, res) => {
   try {
     const { name, company, description, tags, maxMembers } = req.body;
 
@@ -80,8 +113,8 @@ router.post('/', checkRole('student'), async (req, res) => {
   }
 });
 
-// ─── POST join or leave a group (toggle) ─────────────────────────────────────
-router.post('/:id/join', checkRole('student'), async (req, res) => {
+// ─── POST join or leave a group — shortlisted students only ──────────────────
+router.post('/:id/join', checkRole('student'), requireShortlisted, async (req, res) => {
   try {
     const group = await StudyGroup.findById(req.params.id);
     if (!group || !group.isActive) {
@@ -128,7 +161,6 @@ router.delete('/:id', async (req, res) => {
 
     group.isActive = false;
     await group.save();
-    // Clean up messages older than the group
     await StudyGroupMessage.deleteMany({ groupId: req.params.id });
     res.json({ success: true, message: 'Group deleted' });
   } catch (error) {
@@ -136,9 +168,8 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// ─── GET messages in a group ──────────────────────────────────────────────────
-// Supports ?since=ISO-timestamp for efficient polling (only fetch new messages)
-router.get('/:id/messages', async (req, res) => {
+// ─── GET messages in a group — member must be shortlisted ─────────────────────
+router.get('/:id/messages', requireShortlisted, async (req, res) => {
   try {
     const group = await StudyGroup.findById(req.params.id);
     if (!group || !group.isActive) {
@@ -158,7 +189,7 @@ router.get('/:id/messages', async (req, res) => {
 
     const messages = await StudyGroupMessage.find(filter)
       .sort({ createdAt: 1 })
-      .limit(req.query.since ? 100 : 60); // full load vs poll update
+      .limit(req.query.since ? 100 : 60);
 
     res.json({ success: true, messages });
   } catch (error) {
@@ -166,8 +197,8 @@ router.get('/:id/messages', async (req, res) => {
   }
 });
 
-// ─── POST send a message ──────────────────────────────────────────────────────
-router.post('/:id/messages', checkRole('student'), async (req, res) => {
+// ─── POST send a message — shortlisted students only ─────────────────────────
+router.post('/:id/messages', checkRole('student'), requireShortlisted, async (req, res) => {
   try {
     const group = await StudyGroup.findById(req.params.id);
     if (!group || !group.isActive) {

@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './StudyGroups.css';
 import {
   Users, Plus, Search, MessageCircle, LogIn, LogOut,
-  Trash2, Send, X, ChevronLeft, Loader
+  Trash2, Send, X, ChevronLeft, Loader, Lock, ShieldCheck
 } from 'lucide-react';
 
 const API  = process.env.REACT_APP_API_URL;
@@ -29,6 +29,7 @@ export default function StudyGroups() {
   const [loadingChat, setLoadingChat]    = useState(false);
   const [sendingMsg, setSendingMsg]      = useState(false);
   const [showCreate, setShowCreate]      = useState(false);
+  const [isShortlisted, setIsShortlisted] = useState(false);
   const [form, setForm] = useState({ name: '', company: '', description: '', maxMembers: 30 });
 
   const messagesEndRef = useRef(null);
@@ -46,7 +47,10 @@ export default function StudyGroups() {
         headers: HEADERS(),
         params: search ? { search } : {}
       });
-      if (res.data.success) setGroups(res.data.groups);
+      if (res.data.success) {
+        setGroups(res.data.groups);
+        setIsShortlisted(res.data.isShortlisted === true);
+      }
     } catch { toast.error('Failed to load groups'); }
     finally { setLoadingGroups(false); }
   }, [search]);
@@ -64,8 +68,13 @@ export default function StudyGroups() {
           lastMsgTime.current = res.data.messages[res.data.messages.length - 1].createdAt;
         }
       }
-    } catch { toast.error('Failed to load messages'); }
-    finally { setLoadingChat(false); }
+    } catch (err) {
+      if (err.response?.data?.reason === 'not_shortlisted') {
+        toast.error('Only shortlisted students can access group chats.');
+      } else {
+        toast.error('Failed to load messages');
+      }
+    } finally { setLoadingChat(false); }
   }, []);
 
   // ── Poll for new messages (4s) ─────────────────────────────────────────────
@@ -94,8 +103,10 @@ export default function StudyGroups() {
     lastMsgTime.current = null;
     setMessages([]);
     setActiveGroup(group);
-    await fetchMessages(group._id);
-    pollRef.current = setInterval(() => pollMessages(group._id), 4000);
+    if (isShortlisted) {
+      await fetchMessages(group._id);
+      pollRef.current = setInterval(() => pollMessages(group._id), 4000);
+    }
   };
 
   // Cleanup poll on unmount
@@ -109,6 +120,10 @@ export default function StudyGroups() {
   // ── Join / Leave ───────────────────────────────────────────────────────────
   const handleJoin = async (groupId, e) => {
     e?.stopPropagation();
+    if (!isShortlisted) {
+      toast.error('Only shortlisted students can join study groups.');
+      return;
+    }
     try {
       const res = await axios.post(`${API}/study-groups/${groupId}/join`, {}, { headers: HEADERS() });
       toast.success(res.data.message);
@@ -147,6 +162,10 @@ export default function StudyGroups() {
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!msgInput.trim() || !activeGroup) return;
+    if (!isShortlisted) {
+      toast.error('Only shortlisted students can send messages.');
+      return;
+    }
     setSendingMsg(true);
     try {
       const res = await axios.post(
@@ -167,6 +186,10 @@ export default function StudyGroups() {
   // ── Create group ───────────────────────────────────────────────────────────
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (!isShortlisted) {
+      toast.error('Only shortlisted students can create study groups.');
+      return;
+    }
     if (!form.name || !form.company) return toast.error('Name and company are required');
     try {
       const res = await axios.post(`${API}/study-groups`, form, { headers: HEADERS() });
@@ -191,6 +214,43 @@ export default function StudyGroups() {
   const formatTime = (ts) =>
     new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
+  // ── Locked Banner Component ────────────────────────────────────────────────
+  const LockedBanner = () => (
+    <div style={{
+      background: 'linear-gradient(135deg, #fef3c7, #fffbeb)',
+      border: '1px solid #f59e0b',
+      borderLeft: '5px solid #f59e0b',
+      borderRadius: '12px',
+      padding: '18px 20px',
+      marginBottom: '16px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '14px'
+    }}>
+      <div style={{
+        background: '#f59e0b',
+        borderRadius: '50%',
+        width: '42px',
+        height: '42px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}>
+        <Lock size={20} color="#fff" />
+      </div>
+      <div>
+        <div style={{ fontWeight: '700', color: '#92400e', fontSize: '15px', marginBottom: '5px' }}>
+          🔒 Study Groups are for Shortlisted Students Only
+        </div>
+        <div style={{ color: '#92400e', fontSize: '13px', lineHeight: '1.6' }}>
+          You need to be <strong>shortlisted, in interview, or selected</strong> by a recruiter to create, join, or chat in study groups.
+          Apply to jobs and get shortlisted to unlock this feature!
+        </div>
+      </div>
+    </div>
+  );
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="sg-page">
@@ -201,11 +261,19 @@ export default function StudyGroups() {
         <div className="sg-sidebar-header">
           <div>
             <h2 className="sg-title">Study Groups</h2>
-            <p className="sg-subtitle">Find peers, prep together</p>
+            <p className="sg-subtitle">
+              {isShortlisted
+                ? <><ShieldCheck size={13} style={{ verticalAlign: 'middle', color: '#10b981' }} /> Shortlisted — Full Access</>
+                : <><Lock size={13} style={{ verticalAlign: 'middle', color: '#f59e0b' }} /> Shortlisted students only</>
+              }
+            </p>
           </div>
-          <button className="sg-create-btn" onClick={() => setShowCreate(true)}>
-            <Plus size={16} /> New
-          </button>
+          {/* Only show "New" button if shortlisted */}
+          {isShortlisted && (
+            <button className="sg-create-btn" onClick={() => setShowCreate(true)}>
+              <Plus size={16} /> New
+            </button>
+          )}
         </div>
 
         <div className="sg-search">
@@ -224,7 +292,9 @@ export default function StudyGroups() {
           ) : groups.length === 0 ? (
             <div className="sg-empty">
               <Users size={28} />
-              <p>No groups yet.<br />Be the first to create one!</p>
+              <p>No groups yet.<br />
+                {isShortlisted ? 'Be the first to create one!' : 'Get shortlisted to create one!'}
+              </p>
             </div>
           ) : groups.map(g => (
             <div
@@ -270,12 +340,30 @@ export default function StudyGroups() {
       <main className="sg-chat-panel">
         {!activeGroup ? (
           <div className="sg-welcome">
-            <div className="sg-welcome-icon">👥</div>
-            <h3>Select a study group to start chatting</h3>
-            <p>Join company-specific rooms and prepare together with peers</p>
-            <button className="sg-create-big-btn" onClick={() => setShowCreate(true)}>
-              <Plus size={18} /> Create a Study Group
-            </button>
+            {/* Show locked banner if not shortlisted */}
+            {!isShortlisted && (
+              <div style={{ width: '100%', maxWidth: '560px', textAlign: 'left' }}>
+                <LockedBanner />
+              </div>
+            )}
+            <div className="sg-welcome-icon">{isShortlisted ? '👥' : '🔒'}</div>
+            <h3>
+              {isShortlisted
+                ? 'Select a study group to start chatting'
+                : 'Study Groups — Shortlisted Access Only'
+              }
+            </h3>
+            <p>
+              {isShortlisted
+                ? 'Join company-specific rooms and prepare together with peers'
+                : 'Get shortlisted by a recruiter to unlock study groups and chat with fellow candidates.'
+              }
+            </p>
+            {isShortlisted && (
+              <button className="sg-create-big-btn" onClick={() => setShowCreate(true)}>
+                <Plus size={18} /> Create a Study Group
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -295,82 +383,117 @@ export default function StudyGroups() {
                 <div className="sg-chat-sub">{activeGroup.company} · {activeGroup.members?.length} members</div>
               </div>
               <div className="sg-chat-header-actions">
-                {!isMemberOf(activeGroup) ? (
-                  <button className="sg-join-btn" onClick={() => handleJoin(activeGroup._id)}>
-                    <LogIn size={14} /> Join
-                  </button>
-                ) : !isCreatorOf(activeGroup) ? (
-                  <button className="sg-leave-btn" onClick={() => handleJoin(activeGroup._id)}>
-                    <LogOut size={14} /> Leave
-                  </button>
-                ) : null}
+                {isShortlisted ? (
+                  !isMemberOf(activeGroup) ? (
+                    <button className="sg-join-btn" onClick={() => handleJoin(activeGroup._id)}>
+                      <LogIn size={14} /> Join
+                    </button>
+                  ) : !isCreatorOf(activeGroup) ? (
+                    <button className="sg-leave-btn" onClick={() => handleJoin(activeGroup._id)}>
+                      <LogOut size={14} /> Leave
+                    </button>
+                  ) : null
+                ) : (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                    background: '#fef3c7', color: '#92400e', borderRadius: '20px',
+                    padding: '5px 12px', fontSize: '12px', fontWeight: '600'
+                  }}>
+                    <Lock size={12} /> Shortlisted Only
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Messages */}
-            <div className="sg-messages">
-              {loadingChat ? (
-                <div className="sg-msg-loading"><Loader size={20} className="sg-spin" /> Loading messages…</div>
-              ) : messages.length === 0 ? (
-                <div className="sg-no-msgs">
-                  <MessageCircle size={32} />
-                  <p>No messages yet. Say hello! 👋</p>
+            {/* Locked state overlay for non-shortlisted viewing a group */}
+            {!isShortlisted ? (
+              <div style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                padding: '40px', gap: '16px'
+              }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  borderRadius: '50%', width: '72px', height: '72px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Lock size={32} color="#fff" />
                 </div>
-              ) : (
-                messages.map(m => {
-                  const isMe = m.senderId === myId || m.senderId?._id === myId;
-                  return (
-                    <div key={m._id} className={`sg-msg-row ${isMe ? 'me' : 'them'}`}>
-                      {!isMe && (
-                        <div className="sg-msg-avatar" style={{ background: companyColor(m.senderName) }}>
-                          {m.senderName[0].toUpperCase()}
-                        </div>
-                      )}
-                      <div className="sg-bubble-wrap">
-                        {!isMe && <div className="sg-sender-name">{m.senderName}</div>}
-                        <div className={`sg-bubble ${isMe ? 'mine' : 'theirs'}`}>
-                          {m.content}
-                        </div>
-                        <div className="sg-msg-time">{formatTime(m.createdAt)}</div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Send Box */}
-            {isMemberOf(activeGroup) ? (
-              <form className="sg-send-bar" onSubmit={sendMessage}>
-                <input
-                  className="sg-msg-input"
-                  placeholder="Type a message… (Enter to send)"
-                  value={msgInput}
-                  onChange={e => setMsgInput(e.target.value)}
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  className="sg-send-btn"
-                  disabled={sendingMsg || !msgInput.trim()}
-                >
-                  {sendingMsg ? <Loader size={16} className="sg-spin" /> : <Send size={16} />}
-                </button>
-              </form>
-            ) : (
-              <div className="sg-join-nudge">
-                <LogIn size={16} />
-                Join this group to participate in the conversation
-                <button onClick={() => handleJoin(activeGroup._id)}>Join Now</button>
+                <h3 style={{ margin: 0, color: '#1e293b' }}>Chat is Locked</h3>
+                <p style={{ color: '#64748b', textAlign: 'center', maxWidth: '380px', margin: 0, fontSize: '14px', lineHeight: '1.6' }}>
+                  Only students who have been <strong>shortlisted, invited for interview, or selected</strong> by a recruiter can access group chats.
+                  <br /><br />
+                  Apply to more jobs and get shortlisted to unlock this feature!
+                </p>
               </div>
+            ) : (
+              <>
+                {/* Messages */}
+                <div className="sg-messages">
+                  {loadingChat ? (
+                    <div className="sg-msg-loading"><Loader size={20} className="sg-spin" /> Loading messages…</div>
+                  ) : messages.length === 0 ? (
+                    <div className="sg-no-msgs">
+                      <MessageCircle size={32} />
+                      <p>{isMemberOf(activeGroup) ? 'No messages yet. Say hello! 👋' : 'Join the group to see messages.'}</p>
+                    </div>
+                  ) : (
+                    messages.map(m => {
+                      const isMe = m.senderId === myId || m.senderId?._id === myId;
+                      return (
+                        <div key={m._id} className={`sg-msg-row ${isMe ? 'me' : 'them'}`}>
+                          {!isMe && (
+                            <div className="sg-msg-avatar" style={{ background: companyColor(m.senderName) }}>
+                              {m.senderName[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div className="sg-bubble-wrap">
+                            {!isMe && <div className="sg-sender-name">{m.senderName}</div>}
+                            <div className={`sg-bubble ${isMe ? 'mine' : 'theirs'}`}>
+                              {m.content}
+                            </div>
+                            <div className="sg-msg-time">{formatTime(m.createdAt)}</div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Send Box */}
+                {isMemberOf(activeGroup) ? (
+                  <form className="sg-send-bar" onSubmit={sendMessage}>
+                    <input
+                      className="sg-msg-input"
+                      placeholder="Type a message… (Enter to send)"
+                      value={msgInput}
+                      onChange={e => setMsgInput(e.target.value)}
+                      autoFocus
+                    />
+                    <button
+                      type="submit"
+                      className="sg-send-btn"
+                      disabled={sendingMsg || !msgInput.trim()}
+                    >
+                      {sendingMsg ? <Loader size={16} className="sg-spin" /> : <Send size={16} />}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="sg-join-nudge">
+                    <LogIn size={16} />
+                    Join this group to participate in the conversation
+                    <button onClick={() => handleJoin(activeGroup._id)}>Join Now</button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
       </main>
 
       {/* ── Create Group Modal ── */}
-      {showCreate && (
+      {showCreate && isShortlisted && (
         <div className="sg-modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="sg-modal" onClick={e => e.stopPropagation()}>
             <div className="sg-modal-header">
