@@ -67,7 +67,8 @@ router.post('/jobs', checkApproved, async (req, res) => {
     const jobData = {
       ...req.body,
       recruiterId: req.userId,
-      isApproved: true // Auto-approve for testing (change to false for production)
+      isApproved: false, // Requires admin approval before visible to students
+      status: 'draft'    // Will be set to 'active' by admin on approval
     };
 
     const job = new Job(jobData);
@@ -135,9 +136,10 @@ router.put('/jobs/:jobId', checkApproved, async (req, res) => {
 
     Object.assign(job, req.body);
     job.isApproved = false; // Requires re-approval after edit
+    job.status = 'draft';   // Reset to draft until re-approved
     await job.save();
 
-    res.json({ message: 'Job updated successfully. Pending admin approval.', job });
+    res.json({ message: 'Job updated. Pending admin re-approval before it becomes visible to students.', job });
   } catch (error) {
     res.status(500).json({ message: 'Error updating job', error: error.message });
   }

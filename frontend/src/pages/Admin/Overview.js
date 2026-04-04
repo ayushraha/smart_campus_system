@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { FiBriefcase, FiFileText, FiCheckCircle, FiClock } from 'react-icons/fi';
+import { FiBriefcase, FiFileText, FiCheckCircle, FiClock, FiAlertCircle } from 'react-icons/fi';
 
 const Overview = () => {
   const [stats, setStats] = useState({
@@ -8,7 +9,8 @@ const Overview = () => {
     pendingApplications: 0,
     shortlisted: 0,
     selected: 0,
-    availableJobs: 0
+    availableJobs: 0,
+    pendingJobs: 0
   });
   const [recentApplications, setRecentApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,61 @@ const Overview = () => {
   return (
     <div className="overview">
       <h1>Welcome Back!</h1>
+
+      {/* ⚠️ Pending Job Approvals Alert */}
+      {stats.pendingJobs > 0 && (
+        <Link to="/admin/jobs" style={{ textDecoration: 'none' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #fff3cd, #fef8e7)',
+            border: '1px solid #ffc107',
+            borderLeft: '5px solid #e6a100',
+            borderRadius: '10px',
+            padding: '16px 20px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            cursor: 'pointer',
+            transition: 'box-shadow 0.2s',
+            boxShadow: '0 2px 8px rgba(230,161,0,0.15)'
+          }}
+          onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(230,161,0,0.3)'}
+          onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(230,161,0,0.15)'}
+          >
+            <div style={{
+              background: '#ffc107',
+              borderRadius: '50%',
+              width: '44px',
+              height: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <FiAlertCircle size={22} color="#fff" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: '700', color: '#856404', fontSize: '16px', marginBottom: '3px' }}>
+                ⏳ {stats.pendingJobs} Job{stats.pendingJobs > 1 ? 's' : ''} Awaiting Your Approval
+              </div>
+              <div style={{ color: '#856404', fontSize: '13px' }}>
+                Recruiters have posted jobs that are not yet visible to students. Click to review and approve.
+              </div>
+            </div>
+            <div style={{
+              background: '#e6a100',
+              color: '#fff',
+              borderRadius: '20px',
+              padding: '6px 16px',
+              fontSize: '13px',
+              fontWeight: '600',
+              flexShrink: 0
+            }}>
+              Review Now →
+            </div>
+          </div>
+        </Link>
+      )}
 
       <div className="stats-grid">
         <div className="stat-card blue">
@@ -85,7 +142,18 @@ const Overview = () => {
           </div>
           <div className="stat-info">
             <h3>{stats.availableJobs}</h3>
-            <p>Available Jobs</p>
+            <p>Active Jobs</p>
+          </div>
+        </div>
+
+        {/* Pending Jobs approval count card */}
+        <div className="stat-card" style={{ background: 'linear-gradient(135deg, #fff3cd, #fef8e7)', border: '1px solid #ffc107' }}>
+          <div className="stat-icon" style={{ background: 'rgba(255,193,7,0.2)', color: '#e6a100' }}>
+            <FiClock />
+          </div>
+          <div className="stat-info">
+            <h3 style={{ color: '#856404' }}>{stats.pendingJobs}</h3>
+            <p style={{ color: '#856404' }}>Jobs Pending Approval</p>
           </div>
         </div>
       </div>

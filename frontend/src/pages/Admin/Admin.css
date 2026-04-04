@@ -259,6 +259,7 @@
 .badge.selected { background: #d1fae5; color: #065f46; }
 .badge.interview { background: #e0e7ff; color: #3730a3; }
 .badge.closed { background: #f3f4f6; color: #374151; }
+.badge.draft { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
 
 .btn-icon {
   padding: 8px;
