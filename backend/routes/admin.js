@@ -139,6 +139,18 @@ router.get('/jobs', async (req, res) => {
   }
 });
 
+// Get applications for a specific job
+router.get('/jobs/:jobId/applications', async (req, res) => {
+  try {
+    const applications = await Application.find({ jobId: req.params.jobId })
+      .populate('studentId', 'name email studentProfile')
+      .sort({ createdAt: -1 });
+    res.json(applications);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching applications for job', error: error.message });
+  }
+});
+
 // Approve/Reject job
 router.put('/jobs/:jobId/approval', async (req, res) => {
   try {

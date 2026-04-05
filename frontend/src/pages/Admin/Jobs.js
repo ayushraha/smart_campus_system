@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { FiCheck, FiX, FiTrash2, FiSearch, FiEye, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiCheck, FiX, FiTrash2, FiSearch, FiEye, FiClock, FiCheckCircle, FiUsers } from 'react-icons/fi';
 import { format } from 'date-fns';
 
 const Jobs = () => {
@@ -13,6 +13,12 @@ const Jobs = () => {
     search: ''
   });
   const [selectedJob, setSelectedJob] = useState(null);
+  
+  // Applicants View State
+  const [applicantsJob, setApplicantsJob] = useState(null);
+  const [jobApplicants, setJobApplicants] = useState([]);
+  const [loadingApplicants, setLoadingApplicants] = useState(false);
+
   const [activeView, setActiveView] = useState('pending'); // 'pending' | 'all'
 
   useEffect(() => {
@@ -55,6 +61,20 @@ const Jobs = () => {
       } catch (error) {
         toast.error('Error deleting job');
       }
+    }
+  };
+
+  const handleViewApplicants = async (job) => {
+    setApplicantsJob(job);
+    setLoadingApplicants(true);
+    setJobApplicants([]);
+    try {
+      const response = await axios.get(`/api/admin/jobs/${job._id}/applications`);
+      setJobApplicants(response.data);
+    } catch (error) {
+      toast.error('Error fetching applicants for job');
+    } finally {
+      setLoadingApplicants(false);
     }
   };
 
@@ -228,7 +248,23 @@ const Jobs = () => {
                 <td>
                   <span className="badge">{job.jobType}</span>
                 </td>
-                <td>{job.applicationsCount}</td>
+                <td>
+                  {job.applicationsCount > 0 ? (
+                    <button 
+                      onClick={() => handleViewApplicants(job)}
+                      style={{ 
+                        background: '#e0e7ff', color: '#4338ca', border: 'none', 
+                        padding: '4px 10px', borderRadius: '12px', fontSize: '12px', 
+                        fontWeight: '600', cursor: 'pointer', display: 'flex', 
+                        alignItems: 'center', gap: '4px' 
+                      }}
+                    >
+                      <FiUsers size={12} /> {job.applicationsCount}
+                    </button>
+                  ) : (
+                    <span style={{ color: '#aaa', fontSize: '13px' }}>0</span>
+                  )}
+                </td>
                 <td>
                   <span className={`badge ${job.status}`}>{job.status}</span>
                 </td>
@@ -350,6 +386,63 @@ const Jobs = () => {
               <p><strong>Skills:</strong> {selectedJob.skills.join(', ')}</p>
             )}
             <button onClick={() => setSelectedJob(null)} style={{ marginTop: '16px' }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* Applicants Modal */}
+      {applicantsJob && (
+        <div className="modal" onClick={() => setApplicantsJob(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', width: '90%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ margin: 0 }}>Applicants for {applicantsJob.title}</h2>
+                <p style={{ margin: '5px 0 0', color: '#666', fontSize: '14px' }}>
+                  {applicantsJob.company} • {jobApplicants.length} Registration{jobApplicants.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+
+            {loadingApplicants ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                <FiClock className="spin-icon" size={24} style={{ marginBottom: '10px' }} />
+                <p>Loading applicants...</p>
+              </div>
+            ) : jobApplicants.length > 0 ? (
+              <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '20px', boxShadow: 'none', border: '1px solid #eee' }}>
+                <table className="data-table">
+                  <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#fff' }}>
+                    <tr>
+                      <th>Student Name</th>
+                      <th>Email</th>
+                      <th>Status</th>
+                      <th>Applied Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {jobApplicants.map(app => (
+                      <tr key={app._id}>
+                        <td>{app.studentId?.name || <em style={{color: '#aaa'}}>Deleted User</em>}</td>
+                        <td>{app.studentId?.email || <em style={{color: '#aaa'}}>N/A</em>}</td>
+                        <td>
+                          <span className={`badge ${app.status}`}>{app.status}</span>
+                        </td>
+                        <td>{format(new Date(app.appliedDate || app.createdAt), 'MMM dd, yyyy')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="no-data" style={{ padding: '40px', textAlign: 'center' }}>
+                <FiUsers size={40} color="#cbd5e0" style={{ marginBottom: '10px' }} />
+                <p>No applicants found for this job yet.</p>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setApplicantsJob(null)} className="btn-secondary">Close</button>
+            </div>
           </div>
         </div>
       )}
