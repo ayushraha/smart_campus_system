@@ -435,6 +435,125 @@ router.post("/parse", authMiddleware, upload.single("resume"), async (req, res) 
   }
 });
 
+// POST: ATS Score Check — accepts structured resume JSON + optional JD
+router.post("/ats-check", authMiddleware, async (req, res) => {
+  try {
+    if (!genAI) {
+      return res.status(503).json({ success: false, error: "Gemini AI not initialized. Check GOOGLE_GEMINI_API_KEY in .env" });
+    }
+
+    const { resumeData, jobDescription } = req.body;
+    if (!resumeData) {
+      return res.status(400).json({ success: false, error: "resumeData is required" });
+    }
+
+    // Build a human-readable text representation of the resume for the AI
+    const pi = resumeData.personalInfo || {};
+    const skills = resumeData.skills || {};
+    const techSkills = (skills.technical || []).join(", ");
+    const softSkills = (skills.soft || []).join(", ");
+    const tools = (skills.tools || []).join(", ");
+
+    const experienceText = (resumeData.experience || []).map(e =>
+      `${e.title || ""} at ${e.company || ""} (${e.startDate || ""} - ${e.endDate || "Present"}): ${e.description || ""}`
+    ).join("\n");
+
+    const educationText = (resumeData.education || []).map(e =>
+      `${e.degree || ""} from ${e.institution || ""}, CGPA: ${e.cgpa || "N/A"}`
+    ).join("\n");
+
+    const projectsText = (resumeData.projects || []).map(p =>
+      `${p.title || ""}: ${p.description || ""} (Tech: ${(p.technologies || []).join(", ")})`
+    ).join("\n");
+
+    const resumeText = `
+Name: ${pi.firstName || ""} ${pi.lastName || ""}
+Email: ${pi.email || ""} | Phone: ${pi.phone || ""}
+Summary: ${pi.professionalSummary || "Not provided"}
+
+TECHNICAL SKILLS: ${techSkills || "None"}
+SOFT SKILLS: ${softSkills || "None"}
+TOOLS & TECHNOLOGIES: ${tools || "None"}
+
+WORK EXPERIENCE:
+${experienceText || "None"}
+
+EDUCATION:
+${educationText || "None"}
+
+PROJECTS:
+${projectsText || "None"}
+    `.trim();
+
+    const jd = jobDescription
+      ? `Job Description:\n${jobDescription}`
+      : `Job Description: General Software Engineering / Tech Role`;
+
+    console.log("\n🎯 ATS CHECK REQUEST RECEIVED");
+    console.log("Resume text length:", resumeText.length, "chars");
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `You are an expert ATS (Applicant Tracking System) analyst and career coach. Analyze the resume below against the job description and return ONLY valid JSON with NO markdown, NO code blocks, NO extra text.
+
+${jd}
+
+Resume:
+${resumeText}
+
+Return EXACTLY this JSON structure:
+{
+  "atsScore": <integer 0-100>,
+  "grade": "<A/B/C/D/F>",
+  "summary": "<1-2 sentence overall assessment>",
+  "sectionScores": {
+    "personalInfo": <0-100>,
+    "summary": <0-100>,
+    "skills": <0-100>,
+    "experience": <0-100>,
+    "education": <0-100>,
+    "projects": <0-100>
+  },
+  "matchedKeywords": ["<keyword>", ...],
+  "missingKeywords": ["<keyword>", ...],
+  "improvements": [
+    {
+      "section": "<section name>",
+      "issue": "<specific issue>",
+      "fix": "<actionable fix>",
+      "priority": "high|medium|low"
+    }
+  ],
+  "strengths": ["<strength>", ...],
+  "quickTips": ["<tip>", ...]
+}`;
+
+    const response = await model.generateContent(prompt);
+    const responseText = response.response.text();
+    console.log("📥 Gemini ATS response received, length:", responseText.length);
+
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("Gemini did not return valid JSON for ATS check");
+    }
+
+    let atsResult;
+    try {
+      atsResult = JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      const cleaned = jsonMatch[0].replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
+      atsResult = JSON.parse(cleaned);
+    }
+
+    console.log(`✅ ATS Score: ${atsResult.atsScore}/100 (${atsResult.grade})`);
+    res.json({ success: true, ...atsResult });
+
+  } catch (error) {
+    console.error("❌ ATS Check Error:", error.message);
+    res.status(500).json({ success: false, error: error.message || "ATS check failed" });
+  }
+});
+
 // GET: History
 router.get("/history", authMiddleware, async (req, res) => {
   res.json({ success: true, analyses: [] });
