@@ -10,6 +10,7 @@ const Applications = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [companyFilter, setCompanyFilter] = useState('');
 
   useEffect(() => {
     fetchApplications();
@@ -29,8 +30,14 @@ const Applications = () => {
     if (statusFilter) {
       data = data.filter(a => a.status === statusFilter);
     }
+    if (companyFilter) {
+      data = data.filter(a => a.jobId?.company === companyFilter);
+    }
     setFiltered(data);
-  }, [search, statusFilter, applications]);
+  }, [search, statusFilter, companyFilter, applications]);
+
+  // Derive unique companies for the dropdown
+  const uniqueCompanies = Array.from(new Set(applications.map(a => a.jobId?.company).filter(Boolean))).sort();
 
   const fetchApplications = async () => {
     try {
@@ -64,6 +71,12 @@ const Applications = () => {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
+        <select value={companyFilter} onChange={e => setCompanyFilter(e.target.value)}>
+          <option value="">All Companies</option>
+          {uniqueCompanies.map((comp, idx) => (
+            <option key={idx} value={comp}>{comp}</option>
+          ))}
+        </select>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
