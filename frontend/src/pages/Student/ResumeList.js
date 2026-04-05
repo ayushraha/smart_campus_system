@@ -185,6 +185,29 @@ const ResumeList = () => {
     }
   };
 
+  const calculateCompleteness = (resume) => {
+    let score = 0;
+    const weights = {
+      personalInfo: 15,
+      education: 20,
+      experience: 25,
+      skills: 15,
+      projects: 15,
+      certifications: 5,
+      achievements: 5
+    };
+
+    if (resume.personalInfo?.firstName && resume.personalInfo?.email) score += weights.personalInfo;
+    if (resume.education?.length > 0) score += weights.education;
+    if (resume.experience?.length > 0) score += weights.experience;
+    if (resume.skills?.technical?.length > 0) score += weights.skills;
+    if (resume.projects?.length > 0) score += weights.projects;
+    if (resume.certifications?.length > 0) score += weights.certifications;
+    if (resume.achievements?.length > 0) score += weights.achievements;
+
+    return score;
+  };
+
   if (loading) return <div className="loading">Loading resumes...</div>;
 
   return (
@@ -402,10 +425,10 @@ const ResumeList = () => {
                     <div className="progress-bar-small">
                       <div 
                         className="progress-fill-small" 
-                        style={{ width: `${resume.calculateCompleteness?.() || 0}%` }}
+                        style={{ width: `${calculateCompleteness(resume)}%` }}
                       />
                     </div>
-                    <span className="stat-value">{resume.calculateCompleteness?.() || 0}%</span>
+                    <span className="stat-value">{calculateCompleteness(resume)}%</span>
                   </div>
                   <div className="stat-item">
                     <span className="stat-label">Last Updated</span>
