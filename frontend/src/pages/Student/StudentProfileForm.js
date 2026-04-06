@@ -150,36 +150,17 @@ export default function StudentProfileForm() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size too large. Max 5MB.');
+    if (file.size > 2 * 1024 * 1024) { // Reduced to 2MB for Base64 efficiency
+      toast.error('File size too large for profile. Max 2MB.');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('photo', file);
-
-    setLoading(true);
-    try {
-      const res = await fetch(`${API()}/api/student-profile/upload-photo`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (data.success && data.photoUrl) {
-        set('personalInfo', 'profilePhoto', `${API()}${data.photoUrl}`);
-        toast.success('Photo uploaded!');
-      } else {
-        toast.error(data.message || 'Upload failed');
-      }
-    } catch (err) {
-      toast.error('Upload error');
-    } finally {
-      setLoading(false);
-    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      set('personalInfo', 'profilePhoto', reader.result);
+      toast.success('Photo preview updated! Save profile to finish.');
+    };
+    reader.readAsDataURL(file);
   };
 
   // ── Submit ───────────────────────────────────────────────────────────────
@@ -287,12 +268,10 @@ export default function StudentProfileForm() {
                 <div className="spf-photo-container">
                   {profileData.personalInfo.profilePhoto ? (
                     <img 
-                      src={profileData.personalInfo.profilePhoto.startsWith('/') ? `${API()}${profileData.personalInfo.profilePhoto}` : profileData.personalInfo.profilePhoto} 
+                      src={profileData.personalInfo.profilePhoto} 
                       alt="Profile" 
                       className="spf-photo-preview"
                       onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/default-avatar.png'; // Fallback if image fails
                         e.target.style.display = 'none'; // Hide broken image
                         e.target.nextSibling.style.display = 'flex'; // Show placeholder instead
                       }}
