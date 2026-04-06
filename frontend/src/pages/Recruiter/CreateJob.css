@@ -1,0 +1,251 @@
+/* frontend/src/pages/Recruiter/CreateJob.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.cj-page-wrapper {
+  padding: 40px;
+  background: #f8fafc;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+}
+
+.cj-header {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.cj-header h1 {
+  font-size: 36px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+.cj-header p {
+  color: #64748b;
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+.cj-form-container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05);
+  overflow: hidden;
+  border: 1px solid #f1f5f9;
+}
+
+.cj-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.cj-section {
+  padding: 40px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.cj-section:last-child {
+  border-bottom: none;
+}
+
+.cj-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 24px;
+}
+
+.cj-section-title svg {
+  color: #6366f1; /* Indigo */
+}
+
+/* Grids & Layout */
+.cj-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.cj-full-width {
+  grid-column: 1 / -1;
+}
+
+.cj-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cj-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cj-label span {
+  color: #ef4444;
+}
+
+.cj-input, .cj-textarea, .cj-select {
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  color: #0f172a;
+  transition: all 0.2s ease;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cj-input:focus, .cj-textarea:focus, .cj-select:focus {
+  background: white;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+}
+
+.cj-input::placeholder, .cj-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.cj-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Arrays / Lists */
+.cj-array-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cj-btn-remove {
+  padding: 0 16px;
+  background: #fef2f2;
+  color: #ef4444;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cj-btn-remove:hover {
+  background: #fee2e2;
+}
+
+.cj-btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f1f5f9;
+  color: #475569;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.cj-btn-add:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Checkboxes */
+.cj-checkbox-group {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+.cj-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+}
+
+.cj-checkbox-label input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #6366f1;
+}
+
+/* Action Bar */
+.cj-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 30px 40px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+}
+
+.cj-btn-cancel {
+  padding: 14px 24px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cj-btn-cancel:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.cj-btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+  transition: all 0.2s;
+}
+
+.cj-btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99,102,241,0.4);
+}
+
+.cj-btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .cj-page-wrapper { padding: 20px; }
+  .cj-grid { grid-template-columns: 1fr; }
+  .cj-section { padding: 30px 20px; }
+  .cj-actions { padding: 24px 20px; }
+}

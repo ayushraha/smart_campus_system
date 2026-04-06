@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { Briefcase, ListChecks, CheckCircle, Clock, Plus, X, ArrowRight } from 'lucide-react';
+import './CreateJob.css';
 
 const CreateJob = () => {
   const navigate = useNavigate();
@@ -109,299 +111,188 @@ const CreateJob = () => {
   };
 
   return (
-    <div className="create-job-page">
-      <h1>Post New Job</h1>
+    <div className="cj-page-wrapper">
+      <div className="cj-header">
+        <h1>Post a New Opportunity</h1>
+        <p>Find the best talent by providing clear details about the role.</p>
+      </div>
 
-      <div className="form-container">
-        <form onSubmit={handleSubmit}>
-          <div className="form-section">
-            <h2>Basic Information</h2>
-
-            <div className="form-group">
-              <label>Job Title *</label>
-              <input
-                type="text"
-                name="title"
-                value={jobData.title}
-                onChange={handleChange}
-                required
-                placeholder="e.g., Software Engineer"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Company Name *</label>
-              <input
-                type="text"
-                name="company"
-                value={jobData.company}
-                onChange={handleChange}
-                required
-                placeholder="Your company name"
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Location *</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={jobData.location}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., Bangalore, India"
-                />
+      <div className="cj-form-container">
+        <form className="cj-form" onSubmit={handleSubmit}>
+          
+          <div className="cj-section">
+            <h2 className="cj-section-title"><Briefcase size={24} /> Basic Information</h2>
+            
+            <div className="cj-grid">
+              <div className="cj-form-group">
+                <label className="cj-label">Job Title <span>*</span></label>
+                <input className="cj-input" type="text" name="title" value={jobData.title} onChange={handleChange} required placeholder="e.g., Software Engineer" />
               </div>
 
-              <div className="form-group">
-                <label>Job Type *</label>
-                <select name="jobType" value={jobData.jobType} onChange={handleChange}>
+              <div className="cj-form-group">
+                <label className="cj-label">Company Name <span>*</span></label>
+                <input className="cj-input" type="text" name="company" value={jobData.company} onChange={handleChange} required placeholder="Your company name" />
+              </div>
+
+              <div className="cj-form-group">
+                <label className="cj-label">Location <span>*</span></label>
+                <input className="cj-input" type="text" name="location" value={jobData.location} onChange={handleChange} required placeholder="e.g., Bangalore, India" />
+              </div>
+
+              <div className="cj-form-group">
+                <label className="cj-label">Job Type <span>*</span></label>
+                <select className="cj-select" name="jobType" value={jobData.jobType} onChange={handleChange}>
                   <option value="Full-time">Full-time</option>
                   <option value="Part-time">Part-time</option>
                   <option value="Internship">Internship</option>
                   <option value="Contract">Contract</option>
                 </select>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label>Job Description *</label>
-              <textarea
-                name="description"
-                value={jobData.description}
-                onChange={handleChange}
-                required
-                rows="6"
-                placeholder="Describe the role, responsibilities, and what you're looking for..."
-              />
+              <div className="cj-form-group cj-full-width">
+                <label className="cj-label">Job Description <span>*</span></label>
+                <textarea className="cj-textarea" name="description" value={jobData.description} onChange={handleChange} required placeholder="Describe the role, responsibilities, and what you're looking for..." />
+              </div>
             </div>
           </div>
 
-          <div className="form-section">
-            <h2>Requirements & Skills</h2>
+          <div className="cj-section">
+            <h2 className="cj-section-title"><ListChecks size={24} /> Requirements & Skills</h2>
+            
+            <div className="cj-grid">
+              <div className="cj-form-group">
+                <label className="cj-label">Requirements</label>
+                {jobData.requirements.map((req, index) => (
+                  <div key={index} className="cj-array-item">
+                    <input className="cj-input" type="text" value={req} onChange={(e) => handleArrayChange('requirements', index, e.target.value)} placeholder={`Requirement ${index + 1}`} />
+                    {jobData.requirements.length > 1 && (
+                      <button type="button" className="cj-btn-remove" onClick={() => removeArrayField('requirements', index)}><X size={18} /></button>
+                    )}
+                  </div>
+                ))}
+                <button type="button" onClick={() => addArrayField('requirements')} className="cj-btn-add">
+                  <Plus size={16} /> Add Requirement
+                </button>
+              </div>
 
-            <div className="form-group">
-              <label>Requirements</label>
-              {jobData.requirements.map((req, index) => (
-                <div key={index} className="array-input">
-                  <input
-                    type="text"
-                    value={req}
-                    onChange={(e) => handleArrayChange('requirements', index, e.target.value)}
-                    placeholder={`Requirement ${index + 1}`}
-                  />
-                  {jobData.requirements.length > 1 && (
-                    <button type="button" onClick={() => removeArrayField('requirements', index)}>
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button type="button" onClick={() => addArrayField('requirements')} className="btn-secondary">
-                Add Requirement
-              </button>
-            </div>
-
-            <div className="form-group">
-              <label>Skills Required</label>
-              {jobData.skills.map((skill, index) => (
-                <div key={index} className="array-input">
-                  <input
-                    type="text"
-                    value={skill}
-                    onChange={(e) => handleArrayChange('skills', index, e.target.value)}
-                    placeholder={`Skill ${index + 1}`}
-                  />
-                  {jobData.skills.length > 1 && (
-                    <button type="button" onClick={() => removeArrayField('skills', index)}>
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button type="button" onClick={() => addArrayField('skills')} className="btn-secondary">
-                Add Skill
-              </button>
+              <div className="cj-form-group">
+                <label className="cj-label">Skills Required</label>
+                {jobData.skills.map((skill, index) => (
+                  <div key={index} className="cj-array-item">
+                    <input className="cj-input" type="text" value={skill} onChange={(e) => handleArrayChange('skills', index, e.target.value)} placeholder={`Skill ${index + 1}`} />
+                    {jobData.skills.length > 1 && (
+                      <button type="button" className="cj-btn-remove" onClick={() => removeArrayField('skills', index)}><X size={18} /></button>
+                    )}
+                  </div>
+                ))}
+                <button type="button" onClick={() => addArrayField('skills')} className="cj-btn-add">
+                  <Plus size={16} /> Add Skill
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="form-section">
-            <h2>Compensation</h2>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Minimum Salary</label>
-                <input
-                  type="number"
-                  name="salary.min"
-                  value={jobData.salary.min}
-                  onChange={handleChange}
-                  placeholder="50000"
-                />
+          <div className="cj-section">
+            <h2 className="cj-section-title"><CheckCircle size={24} /> Compensation & Eligibility</h2>
+            
+            <div className="cj-grid">
+              <div className="cj-form-group">
+                <label className="cj-label">Min Salary</label>
+                <input className="cj-input" type="number" name="salary.min" value={jobData.salary.min} onChange={handleChange} placeholder="50000" />
               </div>
 
-              <div className="form-group">
-                <label>Maximum Salary</label>
-                <input
-                  type="number"
-                  name="salary.max"
-                  value={jobData.salary.max}
-                  onChange={handleChange}
-                  placeholder="100000"
-                />
+              <div className="cj-form-group">
+                <label className="cj-label">Max Salary</label>
+                <input className="cj-input" type="number" name="salary.max" value={jobData.salary.max} onChange={handleChange} placeholder="100000" />
               </div>
 
-              <div className="form-group">
-                <label>Currency</label>
-                <select name="salary.currency" value={jobData.salary.currency} onChange={handleChange}>
+              <div className="cj-form-group">
+                <label className="cj-label">Currency</label>
+                <select className="cj-select" name="salary.currency" value={jobData.salary.currency} onChange={handleChange}>
                   <option value="INR">INR</option>
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
                 </select>
               </div>
-            </div>
-          </div>
 
-          <div className="form-section">
-            <h2>Eligibility Criteria</h2>
+              <div className="cj-form-group">
+                <label className="cj-label">Minimum CGPA</label>
+                <input className="cj-input" type="number" step="0.1" name="eligibility.minCGPA" value={jobData.eligibility.minCGPA} onChange={handleChange} min="0" max="10" placeholder="e.g., 7.0" />
+              </div>
 
-            <div className="form-group">
-              <label>Minimum CGPA</label>
-              <input
-                type="number"
-                step="0.1"
-                name="eligibility.minCGPA"
-                value={jobData.eligibility.minCGPA}
-                onChange={handleChange}
-                min="0"
-                max="10"
-                placeholder="e.g., 7.0"
-              />
-            </div>
+              <div className="cj-form-group">
+                <label className="cj-label">10th Percentage</label>
+                <input className="cj-input" type="number" step="0.1" name="eligibility.tenthPercent" value={jobData.eligibility.tenthPercent || ''} onChange={handleChange} min="0" max="100" placeholder="e.g., 60" />
+              </div>
 
-            <div className="form-group">
-              <label>Minimum 10th Percentage</label>
-              <input
-                type="number"
-                step="0.1"
-                name="eligibility.tenthPercent"
-                value={jobData.eligibility.tenthPercent || ''}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                placeholder="e.g., 60.0"
-              />
-            </div>
+              <div className="cj-form-group">
+                <label className="cj-label">12th Percentage</label>
+                <input className="cj-input" type="number" step="0.1" name="eligibility.twelfthPercent" value={jobData.eligibility.twelfthPercent || ''} onChange={handleChange} min="0" max="100" placeholder="e.g., 60" />
+              </div>
 
-            <div className="form-group">
-              <label>Minimum 12th Percentage</label>
-              <input
-                type="number"
-                step="0.1"
-                name="eligibility.twelfthPercent"
-                value={jobData.eligibility.twelfthPercent || ''}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                placeholder="e.g., 60.0"
-              />
-            </div>
+              <div className="cj-form-group">
+                <label className="cj-label">Max Active Backlogs</label>
+                <input className="cj-input" type="number" name="eligibility.maxActiveBacklogs" value={jobData.eligibility.maxActiveBacklogs || ''} onChange={handleChange} min="0" placeholder="e.g., 0" />
+              </div>
 
-            <div className="form-group">
-              <label>Max Active Backlogs</label>
-              <input
-                type="number"
-                name="eligibility.maxActiveBacklogs"
-                value={jobData.eligibility.maxActiveBacklogs || ''}
-                onChange={handleChange}
-                min="0"
-                placeholder="e.g., 0"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Eligible Departments</label>
-              {jobData.eligibility.departments.map((dept, index) => (
-                <div key={index} className="array-input">
-                  <input
-                    type="text"
-                    value={dept}
-                    onChange={(e) => {
+              <div className="cj-form-group">
+                <label className="cj-label">Eligible Departments</label>
+                {jobData.eligibility.departments.map((dept, index) => (
+                  <div key={index} className="cj-array-item">
+                    <input className="cj-input" type="text" value={dept} onChange={(e) => {
                       const newDepts = [...jobData.eligibility.departments];
                       newDepts[index] = e.target.value;
-                      setJobData({
-                        ...jobData,
-                        eligibility: { ...jobData.eligibility, departments: newDepts }
-                      });
-                    }}
-                    placeholder="e.g., Computer Science"
-                  />
-                  {jobData.eligibility.departments.length > 1 && (
-                    <button type="button" onClick={() => {
-                      const newDepts = jobData.eligibility.departments.filter((_, i) => i !== index);
-                      setJobData({
-                        ...jobData,
-                        eligibility: { ...jobData.eligibility, departments: newDepts }
-                      });
-                    }}>
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button type="button" onClick={() => {
-                setJobData({
-                  ...jobData,
-                  eligibility: {
-                    ...jobData.eligibility,
-                    departments: [...jobData.eligibility.departments, '']
-                  }
-                });
-              }} className="btn-secondary">
-                Add Department
-              </button>
-            </div>
-
-            <div className="form-group">
-              <label>Eligible Year of Study</label>
-              <div className="checkbox-group">
-                {[1, 2, 3, 4].map(year => (
-                  <label key={year} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={jobData.eligibility.yearOfStudy.includes(year)}
-                      onChange={() => handleYearChange(year)}
-                    />
-                    Year {year}
-                  </label>
+                      setJobData({ ...jobData, eligibility: { ...jobData.eligibility, departments: newDepts }});
+                    }} placeholder="e.g., Computer Science" />
+                    {jobData.eligibility.departments.length > 1 && (
+                      <button type="button" className="cj-btn-remove" onClick={() => {
+                        const newDepts = jobData.eligibility.departments.filter((_, i) => i !== index);
+                        setJobData({ ...jobData, eligibility: { ...jobData.eligibility, departments: newDepts }});
+                      }}><X size={18} /></button>
+                    )}
+                  </div>
                 ))}
+                <button type="button" className="cj-btn-add" onClick={() => {
+                  setJobData({
+                    ...jobData,
+                    eligibility: {
+                      ...jobData.eligibility,
+                      departments: [...jobData.eligibility.departments, '']
+                    }
+                  });
+                }}>
+                  <Plus size={16} /> Add Department
+                </button>
+              </div>
+
+              <div className="cj-form-group cj-full-width">
+                <label className="cj-label">Eligible Year of Study</label>
+                <div className="cj-checkbox-group">
+                  {[1, 2, 3, 4].map(year => (
+                    <label key={year} className="cj-checkbox-label">
+                      <input type="checkbox" checked={jobData.eligibility.yearOfStudy.includes(year)} onChange={() => handleYearChange(year)} />
+                      Year {year}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="form-section">
-            <h2>Application Deadline</h2>
-
-            <div className="form-group">
-              <label>Deadline *</label>
-              <input
-                type="date"
-                name="applicationDeadline"
-                value={jobData.applicationDeadline}
-                onChange={handleChange}
-                required
-                min={new Date().toISOString().split('T')[0]}
-              />
+          <div className="cj-section">
+            <h2 className="cj-section-title"><Clock size={24} /> Application Timeline</h2>
+            <div className="cj-grid">
+              <div className="cj-form-group">
+                <label className="cj-label">Deadline <span>*</span></label>
+                <input className="cj-input" type="date" name="applicationDeadline" value={jobData.applicationDeadline} onChange={handleChange} required min={new Date().toISOString().split('T')[0]} />
+              </div>
             </div>
           </div>
 
-          <div className="form-actions">
-            <button type="button" onClick={() => navigate('/recruiter/jobs')} className="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Posting...' : 'Post Job'}
+          <div className="cj-actions">
+            <button type="button" className="cj-btn-cancel" onClick={() => navigate('/recruiter/jobs')}>Cancel</button>
+            <button type="submit" className="cj-btn-submit" disabled={loading}>
+              {loading ? 'Posting...' : <>Post Opportunity <ArrowRight size={18} /></>}
             </button>
           </div>
         </form>
