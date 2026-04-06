@@ -26,13 +26,25 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|pdf|doc|docx|zip|txt/;
-    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-    const mime = allowed.test(file.mimetype);
-    if (ext && mime) cb(null, true);
-    else cb(new Error('Format not supported'));
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.zip', '.txt'];
+    const allowedMimeTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'application/pdf',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/zip', 'text/plain'
+    ];
+    
+    const extension = path.extname(file.originalname).toLowerCase();
+    const isExtensionAllowed = allowedExtensions.includes(extension);
+    const isMimeAllowed      = allowedMimeTypes.includes(file.mimetype);
+    
+    if (isExtensionAllowed && isMimeAllowed) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type not supported: ${extension} (${file.mimetype})`), false);
+    }
   }
 });
+
 
 // All routes require auth + account approved
 router.use(auth, checkApproved);

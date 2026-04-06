@@ -9,8 +9,15 @@ import {
   FilePlus, File, Download, Image
 } from 'lucide-react';
 
-const API  = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const BASE_URL = API.replace('/api', '');
+const API = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').trim();
+const BASE_URL = (() => {
+  try {
+    const url = new URL(API);
+    return url.origin;
+  } catch {
+    return API.replace('/api', '');
+  }
+})();
 const TOKEN = () => localStorage.getItem('token');
 const HEADERS = () => ({ Authorization: `Bearer ${TOKEN()}` });
 
@@ -203,7 +210,7 @@ export default function StudyGroups() {
       const uploadRes = await axios.post(
         `${API}/study-groups/${activeGroup._id}/upload`,
         formData,
-        { headers: { ...HEADERS(), 'Content-Type': 'multipart/form-data' } }
+        { headers: HEADERS() }
       );
 
       if (uploadRes.data.success) {
@@ -490,7 +497,8 @@ export default function StudyGroups() {
                     </div>
                   ) : (
                     messages.map(m => {
-                      const isMe = m.senderId === myId || m.senderId?._id === myId;
+                      const isMe = m.senderId?.toString() === myId?.toString() || 
+                                   m.senderId?._id?.toString() === myId?.toString();
                       return (
                         <div key={m._id} className={`sg-msg-row ${isMe ? 'me' : 'them'}`}>
                           {!isMe && (

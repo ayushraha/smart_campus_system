@@ -541,10 +541,11 @@
 
 .sg-chat-img {
   max-width: 100%;
-  max-height: 240px;
+  max-height: 320px;
   border-radius: 12px;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
+  background: #f1f5f9;
   transition: transform 0.2s;
 }
 .sg-chat-img:hover { transform: scale(1.02); }
@@ -552,13 +553,14 @@
 .sg-file-info {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: rgba(0,0,0,0.05);
-  padding: 10px;
-  border-radius: 10px;
+  gap: 12px;
+  background: rgba(0,0,0,0.04);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.05);
   overflow: hidden;
 }
-.sg-bubble.mine .sg-file-info { background: rgba(0,0,0,0.15); }
+.sg-bubble.mine .sg-file-info { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.1); }
 
 .sg-file-name {
   flex: 1;
