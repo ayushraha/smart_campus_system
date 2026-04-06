@@ -23,7 +23,10 @@ router.get('/dashboard/stats', async (req, res) => {
     const shortlisted = await Application.countDocuments({ status: 'shortlisted' });
     
     // Unique selected students count
-    const uniqueSelectedStudents = await Application.distinct('studentId', { status: 'selected' });
+    const uniqueSelectedStudents = await Application.distinct('studentId', { 
+      status: 'selected',
+      studentId: { $ne: null }
+    });
     const selected = uniqueSelectedStudents.length;
     
     // Other admin metrics
@@ -219,7 +222,10 @@ router.get('/analytics/placements', async (req, res) => {
       .populate('jobId', 'title company salary jobType');
 
     // Calculate unique student placements
-    const uniquePlacedStudentIds = [...new Set(placedApplications.map(app => app.studentId._id.toString()))];
+    const uniquePlacedStudentIds = [...new Set(placedApplications
+      .filter(app => app.studentId)
+      .map(app => app.studentId._id.toString())
+    )];
     const totalUniquePlacements = uniquePlacedStudentIds.length;
     
     // totalPlacements for backward compatibility with frontend, but representing unique count
