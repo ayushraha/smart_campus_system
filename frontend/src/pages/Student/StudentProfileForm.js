@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import {
   User, MapPin, GraduationCap, Wrench, Briefcase,
   FolderOpen, Award, Link2, Target, Download,
-  ChevronRight, CheckCircle, Save, Loader
+  ChevronRight, CheckCircle, Save, Loader, Camera
 } from 'lucide-react';
 import './StudentProfileForm.css';
 
@@ -16,7 +16,7 @@ const authHeaders = () => ({
 });
 
 const EMPTY_PROFILE = {
-  personalInfo: { firstName: '', lastName: '', email: '', phone: '', dateOfBirth: '', gender: '' },
+  personalInfo: { firstName: '', lastName: '', email: '', phone: '', dateOfBirth: '', gender: '', profilePhoto: '' },
   address: { street: '', city: '', state: '', zipCode: '', country: '' },
   education: { institution: '', degree: '', field: '', startDate: '', endDate: '', cgpa: '', tenthPercent: '', twelfthPercent: '', activeBacklogs: '' },
   skills: { technical: [], soft: [], languages: [], tools: [] },
@@ -141,6 +141,47 @@ export default function StudentProfileForm() {
       careerPreferences: { ...prev.careerPreferences, [field]: value },
     }));
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.match('image.*')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size too large. Max 5MB.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API()}/api/student-profile/upload-photo`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success && data.photoUrl) {
+        set('personalInfo', 'profilePhoto', `${API()}${data.photoUrl}`);
+        toast.success('Photo uploaded!');
+      } else {
+        toast.error(data.message || 'Upload failed');
+      }
+    } catch (err) {
+      toast.error('Upload error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -241,6 +282,28 @@ export default function StudentProfileForm() {
           {activeSection === 'personal' && (
             <div className="spf-section">
               <div className="spf-section-header"><User size={20}/> Personal Information</div>
+              
+              <div className="spf-photo-section">
+                <div className="spf-photo-container">
+                  {profileData.personalInfo.profilePhoto ? (
+                    <img src={profileData.personalInfo.profilePhoto} alt="Profile" className="spf-photo-preview" />
+                  ) : (
+                    <div className="spf-photo-placeholder">
+                      <Camera size={40} />
+                    </div>
+                  )}
+                  <label className="spf-photo-upload-label">
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                    <Camera size={16} />
+                    <span>Upload Photo</span>
+                  </label>
+                </div>
+                <div className="spf-photo-info">
+                  <h3>Profile Picture</h3>
+                  <p>JPG, PNG or WEBP. Max size 5MB.</p>
+                </div>
+              </div>
+
               <div className="spf-grid">
                 <Field label="First Name *" value={profileData.personalInfo.firstName}
                   onChange={v => set('personalInfo','firstName',v)} placeholder="John"/>

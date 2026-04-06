@@ -5,6 +5,30 @@ const StudentProfile = require('../models/StudentProfile');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const { auth, checkRole, checkApproved } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+
+// Multer Config
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/profiles/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `profile-${req.userId}-${Date.now()}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) return cb(null, true);
+    cb(new Error('Only images (jpeg, jpg, png, webp) are allowed!'));
+  }
+});
 
 // ─── Student Routes ───────────────────────────────────────────────────────────
 
@@ -62,6 +86,26 @@ router.post('/create-profile', auth, checkRole('student'), checkApproved, async 
   } catch (error) {
     console.error('Error in /create-profile:', error.message);
     res.status(500).json({ success: false, error: error.message || 'Failed to save profile' });
+  }
+});
+
+// POST: Upload Profile Photo
+router.post('/upload-photo', auth, checkRole('student'), upload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    
+    // Construct the URL/path for the uploaded photo
+    const photoUrl = `/uploads/profiles/${req.file.filename}`;
+    
+    res.json({
+      success: true,
+      message: 'Photo uploaded successfully',
+      photoUrl
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
