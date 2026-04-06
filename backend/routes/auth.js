@@ -7,7 +7,7 @@ const { auth } = require('../middleware/auth');
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role, phone, userType } = req.body;
+    const { name, email, password, role, phone } = req.body;
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -16,23 +16,15 @@ router.post('/register', async (req, res) => {
     }
 
     // Create user - Auto-approve both students and recruiters in development
-    const userData = {
+    const user = new User({
       name,
       email,
       password,
       role,
       phone,
-      isApproved: true
-    };
+      isApproved: true // Auto-approve all users (change to role === 'student' for production)
+    });
 
-    // If student, use provided userType or default to 'current'
-    if (role === 'student') {
-      userData.userType = userType || 'current';
-    } else {
-      userData.userType = 'not_applicable';
-    }
-
-    const user = new User(userData);
     await user.save();
 
     // Generate token

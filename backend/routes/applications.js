@@ -3,13 +3,10 @@ const express = require('express');
 const router = express.Router();
 const Application = require('../models/Application');
 const Job = require('../models/Job');
-const { auth, checkRole, checkApproved, checkCurrentStudent } = require('../middleware/auth');
+const { auth, checkRole, checkApproved } = require('../middleware/auth');
 
 // GET: application by ID (any authenticated user with permission)
-router.get('/:applicationId', auth, checkApproved, async (req, res, next) => {
-  if (req.user.role === 'student') return checkCurrentStudent(req, res, next);
-  next();
-}, async (req, res) => {
+router.get('/:applicationId', auth, checkApproved, async (req, res) => {
   try {
     const application = await Application.findById(req.params.applicationId)
       .populate('jobId', 'title company location salary jobType')

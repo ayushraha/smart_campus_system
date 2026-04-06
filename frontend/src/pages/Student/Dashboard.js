@@ -50,7 +50,7 @@ const Dashboard = () => {
         <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2>Student Portal</h2>
-            <p>{user?.name} {user?.userType === 'alumni' && <span className="alumni-badge">Alumni</span>}</p>
+            <p>{user?.name}</p>
           </div>
           <NotificationBell />
         </div>
@@ -92,60 +92,56 @@ const Dashboard = () => {
             <FiUser /> View Profile
           </Link>
 
-          {/* Placement Section - Only for Current Students */}
-          {user?.userType === 'current' && (
-            <>
-              <div className="nav-section-title">Placement Journey</div>
+          {/* Placement Section */}
+          <div className="nav-section-title">Placement Journey</div>
 
-              <Link 
-                to="/student/jobs" 
-                className={activeTab === 'jobs' ? 'active' : ''}
-                onClick={() => setActiveTab('jobs')}
-              >
-                <FiBriefcase /> Browse Jobs
-              </Link>
+          <Link 
+            to="/student/jobs" 
+            className={activeTab === 'jobs' ? 'active' : ''}
+            onClick={() => setActiveTab('jobs')}
+          >
+            <FiBriefcase /> Browse Jobs
+          </Link>
 
-              <Link 
-                to="/student/applications" 
-                className={activeTab === 'applications' ? 'active' : ''}
-                onClick={() => setActiveTab('applications')}
-              >
-                <FiFileText /> My Applications
-              </Link>
+          <Link 
+            to="/student/applications" 
+            className={activeTab === 'applications' ? 'active' : ''}
+            onClick={() => setActiveTab('applications')}
+          >
+            <FiFileText /> My Applications
+          </Link>
 
-              <Link 
-                to="/student/interviews" 
-                className={activeTab === 'interviews' ? 'active' : ''}
-                onClick={() => setActiveTab('interviews')}
-              >
-                <FiVideo /> Interviews
-              </Link>
+          <Link 
+            to="/student/interviews" 
+            className={activeTab === 'interviews' ? 'active' : ''}
+            onClick={() => setActiveTab('interviews')}
+          >
+            <FiVideo /> Interviews
+          </Link>
 
-              <Link 
-                to="/student/calendar" 
-                className={activeTab === 'calendar' ? 'active' : ''}
-                onClick={() => setActiveTab('calendar')}
-              >
-                <CalendarDays size={18} /> Drive Calendar
-              </Link>
+          <Link 
+            to="/student/calendar" 
+            className={activeTab === 'calendar' ? 'active' : ''}
+            onClick={() => setActiveTab('calendar')}
+          >
+            <CalendarDays size={18} /> Drive Calendar
+          </Link>
 
-              <Link 
-                to="/student/study-groups" 
-                className={activeTab === 'study-groups' ? 'active' : ''}
-                onClick={() => setActiveTab('study-groups')}
-              >
-                <MessageCircle size={18} /> Study Groups
-              </Link>
+          <Link 
+            to="/student/study-groups" 
+            className={activeTab === 'study-groups' ? 'active' : ''}
+            onClick={() => setActiveTab('study-groups')}
+          >
+            <MessageCircle size={18} /> Study Groups
+          </Link>
 
-              <Link 
-                to="/student/track-applications" 
-                className={activeTab === 'track-applications' ? 'active' : ''}
-                onClick={() => setActiveTab('track-applications')}
-              >
-                <Briefcase size={18} /> Track Applications
-              </Link>
-            </>
-          )}
+          <Link 
+            to="/student/track-applications" 
+            className={activeTab === 'track-applications' ? 'active' : ''}
+            onClick={() => setActiveTab('track-applications')}
+          >
+            <Briefcase size={18} /> Track Applications
+          </Link>
 
           {/* Learning & Tools Section */}
           <div className="nav-section-title">Learning & Tools</div>

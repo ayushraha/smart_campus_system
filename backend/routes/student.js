@@ -26,16 +26,13 @@ const isDepartmentAllowed = (job, profile) => {
   return job.eligibility.departments.some(d => d.trim().toLowerCase() === studentDept);
 };
 
-const { auth, checkRole, checkApproved, checkCurrentStudent } = require('../middleware/auth');
+const { auth, checkRole, checkApproved } = require('../middleware/auth');
 
 // All student routes require authentication and student role
 router.use(auth, checkRole('student'));
 
-// Apply currentStudent check for jobs and placement features
-const placementAccess = [auth, checkRole('student'), checkApproved, checkCurrentStudent];
-
 // Get available jobs
-router.get('/jobs', checkApproved, checkCurrentStudent, async (req, res) => {
+router.get('/jobs', checkApproved, async (req, res) => {
   try {
     const { search, location, jobType, minSalary } = req.query;
     const filter = { status: 'active', isApproved: true };
@@ -72,7 +69,7 @@ router.get('/jobs', checkApproved, checkCurrentStudent, async (req, res) => {
 });
 
 // Get job details
-router.get('/jobs/:jobId', checkApproved, checkCurrentStudent, async (req, res) => {
+router.get('/jobs/:jobId', checkApproved, async (req, res) => {
   try {
     const job = await Job.findById(req.params.jobId)
       .populate('recruiterId', 'name email recruiterProfile');
@@ -103,7 +100,7 @@ router.get('/jobs/:jobId', checkApproved, checkCurrentStudent, async (req, res) 
 });
 
 // Apply for job
-router.post('/jobs/:jobId/apply', checkApproved, checkCurrentStudent, async (req, res) => {
+router.post('/jobs/:jobId/apply', checkApproved, async (req, res) => {
   try {
     const { coverLetter, resume } = req.body;
 
