@@ -18,6 +18,14 @@ const checkEligibility = (job, profile) => {
   if (e.maxActiveBacklogs !== undefined && e.maxActiveBacklogs !== null && (edu.activeBacklogs || 0) > e.maxActiveBacklogs) return false;
   return true;
 };
+
+const isDepartmentAllowed = (job, profile) => {
+  if (!job.eligibility || !job.eligibility.departments || job.eligibility.departments.length === 0) return true;
+  const studentDept = profile && profile.education ? (profile.education.field || '').trim().toLowerCase() : '';
+  if (!studentDept) return false;
+  return job.eligibility.departments.some(d => d.trim().toLowerCase() === studentDept);
+};
+
 const { auth, checkRole, checkApproved } = require('../middleware/auth');
 
 // All student routes require authentication and student role
@@ -46,11 +54,13 @@ router.get('/jobs', checkApproved, async (req, res) => {
 
     const studentProfile = await StudentProfile.findOne({ userId: req.userId });
     
-    const jobsWithElig = jobs.map(j => {
-      const jobObj = j.toObject();
-      jobObj.isEligible = checkEligibility(j, studentProfile);
-      return jobObj;
-    });
+    const jobsWithElig = jobs
+      .filter(j => isDepartmentAllowed(j, studentProfile))
+      .map(j => {
+        const jobObj = j.toObject();
+        jobObj.isEligible = checkEligibility(j, studentProfile);
+        return jobObj;
+      });
 
     res.json(jobsWithElig);
   } catch (error) {
@@ -75,6 +85,11 @@ router.get('/jobs/:jobId', checkApproved, async (req, res) => {
     });
 
     const studentProfile = await StudentProfile.findOne({ userId: req.userId });
+    
+    if (!isDepartmentAllowed(job, studentProfile)) {
+      return res.status(403).json({ message: 'This job is restricted to specific departments.' });
+    }
+
     const jobObj = job.toObject();
     jobObj.isEligible = checkEligibility(job, studentProfile);
 
@@ -106,6 +121,11 @@ router.post('/jobs/:jobId/apply', checkApproved, async (req, res) => {
     }
 
     const studentProfile = await StudentProfile.findOne({ userId: req.userId });
+    
+    if (!isDepartmentAllowed(job, studentProfile)) {
+      return res.status(403).json({ message: 'This job is restricted to specific departments.' });
+    }
+
     if (!checkEligibility(job, studentProfile)) {
       return res.status(403).json({ message: 'You do not meet the eligibility criteria for this job' });
     }
