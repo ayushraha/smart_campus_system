@@ -268,13 +268,11 @@ export default function StudentProfileForm() {
                 <div className="spf-photo-container">
                   {profileData.personalInfo.profilePhoto ? (
                     <img 
-                      src={profileData.personalInfo.profilePhoto} 
+                      src={profileData.personalInfo.profilePhoto.startsWith('data:') || profileData.personalInfo.profilePhoto.startsWith('http') 
+                        ? profileData.personalInfo.profilePhoto 
+                        : `${API()}${profileData.personalInfo.profilePhoto}`} 
                       alt="Profile" 
                       className="spf-photo-preview"
-                      onError={(e) => {
-                        e.target.style.display = 'none'; // Hide broken image
-                        e.target.nextSibling.style.display = 'flex'; // Show placeholder instead
-                      }}
                     />
                   ) : null}
                   <div className="spf-photo-placeholder" style={{ display: profileData.personalInfo.profilePhoto ? 'none' : 'flex' }}>

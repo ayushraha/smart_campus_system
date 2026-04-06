@@ -100,7 +100,13 @@ export default function ViewProfile() {
       <div className="vp-hero">
         <div className="vp-avatar">
           {pi.profilePhoto ? (
-            <img src={pi.profilePhoto} alt="Profile" className="vp-avatar-img" />
+            <img 
+              src={pi.profilePhoto.startsWith('data:') || pi.profilePhoto.startsWith('http') 
+                ? pi.profilePhoto 
+                : `${API()}${pi.profilePhoto}`} 
+              alt="Profile" 
+              className="vp-avatar-img" 
+            />
           ) : (
             <>{pi.firstName?.[0]?.toUpperCase() || '?'}{pi.lastName?.[0]?.toUpperCase() || ''}</>
           )}
