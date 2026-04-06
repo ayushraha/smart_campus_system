@@ -286,16 +286,24 @@ export default function StudentProfileForm() {
               <div className="spf-photo-section">
                 <div className="spf-photo-container">
                   {profileData.personalInfo.profilePhoto ? (
-                    <img src={profileData.personalInfo.profilePhoto} alt="Profile" className="spf-photo-preview" />
-                  ) : (
-                    <div className="spf-photo-placeholder">
-                      <Camera size={40} />
-                    </div>
-                  )}
-                  <label className="spf-photo-upload-label">
+                    <img 
+                      src={profileData.personalInfo.profilePhoto.startsWith('/') ? `${API()}${profileData.personalInfo.profilePhoto}` : profileData.personalInfo.profilePhoto} 
+                      alt="Profile" 
+                      className="spf-photo-preview"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/default-avatar.png'; // Fallback if image fails
+                        e.target.style.display = 'none'; // Hide broken image
+                        e.target.nextSibling.style.display = 'flex'; // Show placeholder instead
+                      }}
+                    />
+                  ) : null}
+                  <div className="spf-photo-placeholder" style={{ display: profileData.personalInfo.profilePhoto ? 'none' : 'flex' }}>
+                    <Camera size={40} />
+                  </div>
+                  <label className="spf-photo-upload-label" title="Upload Photo">
                     <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
                     <Camera size={16} />
-                    <span>Upload Photo</span>
                   </label>
                 </div>
                 <div className="spf-photo-info">
