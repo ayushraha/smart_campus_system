@@ -99,7 +99,11 @@ export default function ViewProfile() {
       {/* ── Hero Banner ──────────────────────────────────────────────── */}
       <div className="vp-hero">
         <div className="vp-avatar">
-          {pi.firstName?.[0]?.toUpperCase() || '?'}{pi.lastName?.[0]?.toUpperCase() || ''}
+          {pi.profilePhoto ? (
+            <img src={pi.profilePhoto} alt="Profile" className="vp-avatar-img" />
+          ) : (
+            <>{pi.firstName?.[0]?.toUpperCase() || '?'}{pi.lastName?.[0]?.toUpperCase() || ''}</>
+          )}
         </div>
         <div className="vp-hero-info">
           <div className="vp-badge">
