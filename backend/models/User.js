@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'student', 'recruiter'],
     required: true
   },
+  userType: {
+    type: String,
+    enum: ['current', 'alumni', 'not_applicable'],
+    default: 'not_applicable'
+  },
   phone: {
     type: String
   },

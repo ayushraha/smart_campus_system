@@ -40,4 +40,14 @@ const checkApproved = (req, res, next) => {
   next();
 };
 
-module.exports = { auth, checkRole, checkApproved };
+const checkCurrentStudent = (req, res, next) => {
+  if (req.user.role === 'student' && req.user.userType === 'alumni') {
+    return res.status(403).json({ 
+      message: 'Access restricted to current students only. Alumni should use the mentor features.',
+      isAlumni: true 
+    });
+  }
+  next();
+};
+
+module.exports = { auth, checkRole, checkApproved, checkCurrentStudent };

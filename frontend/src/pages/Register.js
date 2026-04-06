@@ -13,7 +13,7 @@ const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [formData, setFormData] = useState({
-    name: '', email: '', phone: '', role: 'student', password: '', confirmPassword: ''
+    name: '', email: '', phone: '', role: 'student', userType: 'current', password: '', confirmPassword: ''
   });
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
@@ -170,6 +170,33 @@ const Register = () => {
                     </div>
                   </div>
                 </div>
+ 
+                {formData.role === 'student' && (
+                  <div className="auth-field">
+                    <label>Student Status</label>
+                    <div className="auth-type-toggle">
+                      <button 
+                        type="button" 
+                        className={`auth-type-btn ${formData.userType === 'current' ? 'active' : ''}`}
+                        onClick={() => setFormData({...formData, userType: 'current'})}
+                      >
+                        🎓 Current Student
+                      </button>
+                      <button 
+                        type="button" 
+                        className={`auth-type-btn ${formData.userType === 'alumni' ? 'active' : ''}`}
+                        onClick={() => setFormData({...formData, userType: 'alumni'})}
+                      >
+                        🏆 Alumni / Past Student
+                      </button>
+                    </div>
+                    <p className="auth-field-hint">
+                      {formData.userType === 'current' 
+                        ? "You'll have full access to placement drives and job tracking." 
+                        : "You'll join as a mentor to help juniors. Jobs & drives will be hidden."}
+                    </p>
+                  </div>
+                )}
 
                 <div className="auth-field">
                   <label>Email Address</label>

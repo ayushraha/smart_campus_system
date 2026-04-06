@@ -1,7 +1,7 @@
 // backend/routes/driveEvents.js
 const express = require('express');
 const router = express.Router();
-const { auth, checkRole, checkApproved } = require('../middleware/auth');
+const { auth, checkRole, checkApproved, checkCurrentStudent } = require('../middleware/auth');
 const DriveEvent = require('../models/DriveEvent');
 const { notifySubscribers } = require('../services/notificationService');
 
@@ -10,7 +10,10 @@ router.use(auth);
 
 // ─── GET all events ──────────────────────────────────────────────────────────
 // Students see all upcoming; recruiters see only their own
-router.get('/', checkApproved, async (req, res) => {
+router.get('/', checkApproved, async (req, res, next) => {
+  if (req.user.role === 'student') return checkCurrentStudent(req, res, next);
+  next();
+}, async (req, res) => {
   try {
     const { month, year, company, type } = req.query;
     const filter = {};
@@ -40,7 +43,10 @@ router.get('/', checkApproved, async (req, res) => {
 });
 
 // ─── GET single event ─────────────────────────────────────────────────────────
-router.get('/:id', checkApproved, async (req, res) => {
+router.get('/:id', checkApproved, async (req, res, next) => {
+  if (req.user.role === 'student') return checkCurrentStudent(req, res, next);
+  next();
+}, async (req, res) => {
   try {
     const event = await DriveEvent.findById(req.params.id)
       .populate('recruiterId', 'name email')
@@ -141,7 +147,7 @@ router.delete('/:id', checkRole('recruiter', 'admin'), checkApproved, async (req
 });
 
 // ─── POST register / unregister for event (students only) ────────────────────
-router.post('/:id/register', checkRole('student'), checkApproved, async (req, res) => {
+router.post('/:id/register', checkRole('student'), checkCurrentStudent, checkApproved, async (req, res) => {
   try {
     const event = await DriveEvent.findById(req.params.id);
     if (!event) return res.status(404).json({ success: false, message: 'Event not found' });
