@@ -38,6 +38,9 @@ const StudentProfileSchema = new mongoose.Schema(
       startDate: Date,
       endDate: Date,
       cgpa: Number,
+      tenthPercent: Number,
+      twelfthPercent: Number,
+      activeBacklogs: { type: Number, default: 0 },
     },
 
     // Skills

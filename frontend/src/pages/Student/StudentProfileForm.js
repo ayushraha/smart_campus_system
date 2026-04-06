@@ -18,7 +18,7 @@ const authHeaders = () => ({
 const EMPTY_PROFILE = {
   personalInfo: { firstName: '', lastName: '', email: '', phone: '', dateOfBirth: '', gender: '' },
   address: { street: '', city: '', state: '', zipCode: '', country: '' },
-  education: { institution: '', degree: '', field: '', startDate: '', endDate: '', cgpa: '' },
+  education: { institution: '', degree: '', field: '', startDate: '', endDate: '', cgpa: '', tenthPercent: '', twelfthPercent: '', activeBacklogs: '' },
   skills: { technical: [], soft: [], languages: [], tools: [] },
   workExperience: [],
   projects: [],
@@ -296,6 +296,9 @@ export default function StudentProfileForm() {
                 <Field label="Start Date" type="date" value={profileData.education.startDate} onChange={v => set('education','startDate',v)}/>
                 <Field label="End Date (or Expected)" type="date" value={profileData.education.endDate} onChange={v => set('education','endDate',v)}/>
                 <Field label="CGPA / GPA" type="number" value={profileData.education.cgpa} onChange={v => set('education','cgpa',v)} placeholder="8.5"/>
+                <Field label="10th Percentage" type="number" value={profileData.education.tenthPercent} onChange={v => set('education','tenthPercent',v)} placeholder="e.g. 85.0"/>
+                <Field label="12th Percentage" type="number" value={profileData.education.twelfthPercent} onChange={v => set('education','twelfthPercent',v)} placeholder="e.g. 80.0"/>
+                <Field label="Active Backlogs" type="number" value={profileData.education.activeBacklogs} onChange={v => set('education','activeBacklogs',v)} placeholder="0"/>
               </div>
             </div>
           )}

@@ -34,6 +34,9 @@ const jobSchema = new mongoose.Schema({
   },
   eligibility: {
     minCGPA: Number,
+    tenthPercent: Number,
+    twelfthPercent: Number,
+    maxActiveBacklogs: Number,
     departments: [String],
     yearOfStudy: [Number]
   },

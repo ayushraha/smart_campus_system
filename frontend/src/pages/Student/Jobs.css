@@ -286,6 +286,13 @@
   box-shadow: 0 4px 14px rgba(99,102,241,0.3);
 }
 .jb-apply-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(99,102,241,0.5); }
+.jb-apply-btn.disabled {
+  background: rgba(255,255,255,0.05); /* Gray out */
+  color: #64748b;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.jb-apply-btn.disabled:hover { transform: none; box-shadow: none; }
 
 /* ── Empty State ─────────────────────────────────────────────────── */
 .jb-empty {

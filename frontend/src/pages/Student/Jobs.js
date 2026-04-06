@@ -227,9 +227,15 @@ const Jobs = () => {
                               ? 'Deadline passed'
                               : `Closes ${format(new Date(job.applicationDeadline), 'MMM dd, yyyy')}`}
                         </div>
-                        <button className="jb-apply-btn" onClick={() => setSelectedJob(job)}>
-                          Apply Now <FiChevronRight />
-                        </button>
+                        {job.isEligible === false ? (
+                          <button className="jb-apply-btn disabled" disabled title="You do not meet the academic criteria">
+                            Not Applicable
+                          </button>
+                        ) : (
+                          <button className="jb-apply-btn" onClick={() => setSelectedJob(job)}>
+                            Apply Now <FiChevronRight />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

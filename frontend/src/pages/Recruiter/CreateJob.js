@@ -21,6 +21,9 @@ const CreateJob = () => {
     },
     eligibility: {
       minCGPA: '',
+      tenthPercent: '',
+      twelfthPercent: '',
+      maxActiveBacklogs: '',
       departments: [''],
       yearOfStudy: []
     },
@@ -274,6 +277,46 @@ const CreateJob = () => {
                 min="0"
                 max="10"
                 placeholder="e.g., 7.0"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Minimum 10th Percentage</label>
+              <input
+                type="number"
+                step="0.1"
+                name="eligibility.tenthPercent"
+                value={jobData.eligibility.tenthPercent || ''}
+                onChange={handleChange}
+                min="0"
+                max="100"
+                placeholder="e.g., 60.0"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Minimum 12th Percentage</label>
+              <input
+                type="number"
+                step="0.1"
+                name="eligibility.twelfthPercent"
+                value={jobData.eligibility.twelfthPercent || ''}
+                onChange={handleChange}
+                min="0"
+                max="100"
+                placeholder="e.g., 60.0"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Max Active Backlogs</label>
+              <input
+                type="number"
+                name="eligibility.maxActiveBacklogs"
+                value={jobData.eligibility.maxActiveBacklogs || ''}
+                onChange={handleChange}
+                min="0"
+                placeholder="e.g., 0"
               />
             </div>
 

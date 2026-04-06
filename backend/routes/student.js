@@ -5,7 +5,19 @@ const express = require('express');
 const router = express.Router();
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const StudentProfile = require('../models/StudentProfile');
 const DriveEvent = require('../models/DriveEvent');
+
+const checkEligibility = (job, profile) => {
+  if (!job.eligibility || !profile) return true;
+  const edu = profile.education || {};
+  const e = job.eligibility;
+  if (e.minCGPA && (edu.cgpa || 0) < e.minCGPA) return false;
+  if (e.tenthPercent && (edu.tenthPercent || 0) < e.tenthPercent) return false;
+  if (e.twelfthPercent && (edu.twelfthPercent || 0) < e.twelfthPercent) return false;
+  if (e.maxActiveBacklogs !== undefined && e.maxActiveBacklogs !== null && (edu.activeBacklogs || 0) > e.maxActiveBacklogs) return false;
+  return true;
+};
 const { auth, checkRole, checkApproved } = require('../middleware/auth');
 
 // All student routes require authentication and student role
@@ -32,7 +44,15 @@ router.get('/jobs', checkApproved, async (req, res) => {
       .populate('recruiterId', 'name recruiterProfile')
       .sort({ createdAt: -1 });
 
-    res.json(jobs);
+    const studentProfile = await StudentProfile.findOne({ userId: req.userId });
+    
+    const jobsWithElig = jobs.map(j => {
+      const jobObj = j.toObject();
+      jobObj.isEligible = checkEligibility(j, studentProfile);
+      return jobObj;
+    });
+
+    res.json(jobsWithElig);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching jobs', error: error.message });
   }
@@ -54,7 +74,11 @@ router.get('/jobs/:jobId', checkApproved, async (req, res) => {
       studentId: req.userId
     });
 
-    res.json({ job, hasApplied: !!existingApplication });
+    const studentProfile = await StudentProfile.findOne({ userId: req.userId });
+    const jobObj = job.toObject();
+    jobObj.isEligible = checkEligibility(job, studentProfile);
+
+    res.json({ job: jobObj, hasApplied: !!existingApplication });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching job', error: error.message });
   }
@@ -79,6 +103,11 @@ router.post('/jobs/:jobId/apply', checkApproved, async (req, res) => {
     const job = await Job.findById(req.params.jobId);
     if (!job || job.status !== 'active') {
       return res.status(400).json({ message: 'Job not available' });
+    }
+
+    const studentProfile = await StudentProfile.findOne({ userId: req.userId });
+    if (!checkEligibility(job, studentProfile)) {
+      return res.status(403).json({ message: 'You do not meet the eligibility criteria for this job' });
     }
 
     // Create application
