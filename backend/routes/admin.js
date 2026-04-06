@@ -21,7 +21,10 @@ router.get('/dashboard/stats', async (req, res) => {
     const totalApplications = await Application.countDocuments();
     const pendingApplications = await Application.countDocuments({ status: 'pending' });
     const shortlisted = await Application.countDocuments({ status: 'shortlisted' });
-    const selected = await Application.countDocuments({ status: 'selected' });
+    
+    // Unique selected students count
+    const uniqueSelectedStudents = await Application.distinct('studentId', { status: 'selected' });
+    const selected = uniqueSelectedStudents.length;
     
     // Other admin metrics
     const pendingApprovals = await User.countDocuments({ 
@@ -215,7 +218,13 @@ router.get('/analytics/placements', async (req, res) => {
       .populate('studentId', 'name email studentProfile')
       .populate('jobId', 'title company salary jobType');
 
-    const totalPlacements = placedApplications.length;
+    // Calculate unique student placements
+    const uniquePlacedStudentIds = [...new Set(placedApplications.map(app => app.studentId._id.toString()))];
+    const totalUniquePlacements = uniquePlacedStudentIds.length;
+    
+    // totalPlacements for backward compatibility with frontend, but representing unique count
+    const totalPlacements = totalUniquePlacements; 
+
     const placementRate = totalStudents > 0
       ? parseFloat(((totalPlacements / totalStudents) * 100).toFixed(1))
       : 0;

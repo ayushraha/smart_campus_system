@@ -108,10 +108,12 @@ const PlacementAnalytics = () => {
   const { summary, applicationFunnel, statusBreakdown, companyWise, departmentWise, monthlyTrend, salaryDistribution, jobTypeBreakdown } = data;
 
   const formatPackage = (val) => {
-    if (!val) return '₹0';
+    if (!val) return '₹0 LPA';
     const lpa = val / 100000;
-    if (lpa >= 1) return `₹${lpa.toFixed(1)} LPA`;
-    return `₹${val.toLocaleString('en-IN')}`;
+    if (val >= 1000) {
+      return `₹${lpa.toFixed(1)} LPA`;
+    }
+    return `₹${val} LPA`;
   };
 
   return (
