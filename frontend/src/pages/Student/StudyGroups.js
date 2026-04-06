@@ -9,7 +9,8 @@ import {
   FilePlus, File, Download, Image
 } from 'lucide-react';
 
-const API  = process.env.REACT_APP_API_URL;
+const API  = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const BASE_URL = API.replace('/api', '');
 const TOKEN = () => localStorage.getItem('token');
 const HEADERS = () => ({ Authorization: `Bearer ${TOKEN()}` });
 
@@ -503,14 +504,14 @@ export default function StudyGroups() {
                               {m.type === 'file' ? (
                                 <div className="sg-file-msg">
                                   {m.fileType?.startsWith('image/') ? (
-                                    <a href={m.fileUrl} target="_blank" rel="noreferrer">
-                                      <img src={m.fileUrl} alt="uploaded" className="sg-chat-img" />
+                                    <a href={`${BASE_URL}${m.fileUrl}`} target="_blank" rel="noreferrer">
+                                      <img src={`${BASE_URL}${m.fileUrl}`} alt="uploaded" className="sg-chat-img" />
                                     </a>
                                   ) : (
                                     <div className="sg-file-info">
                                       {m.fileType?.includes('pdf') ? <File size={20} color="#f43f5e" /> : <File size={20} />}
                                       <div className="sg-file-name" title={m.fileName}>{m.fileName}</div>
-                                      <a href={m.fileUrl} download={m.fileName} className="sg-file-dl">
+                                      <a href={`${BASE_URL}${m.fileUrl}`} download={m.fileName} className="sg-file-dl">
                                         <Download size={14} />
                                       </a>
                                     </div>
