@@ -205,7 +205,24 @@ router.get('/reports/placements', async (req, res) => {
       .populate('studentId', 'name email studentProfile')
       .populate('jobId', 'title company salary');
     
-    res.json(selectedApplications);
+    // Fetch departments from separate StudentProfile model for each student
+    const StudentProfile = require('../models/StudentProfile');
+    const reports = await Promise.all(selectedApplications.map(async (app) => {
+      const appObj = app.toObject();
+      if (appObj.studentId) {
+        // Fallback for department if not in User document
+        if (!appObj.studentId.studentProfile?.department) {
+          const profile = await StudentProfile.findOne({ userId: appObj.studentId._id });
+          if (profile?.education?.field) {
+            if (!appObj.studentId.studentProfile) appObj.studentId.studentProfile = {};
+            appObj.studentId.studentProfile.department = profile.education.field;
+          }
+        }
+      }
+      return appObj;
+    }));
+    
+    res.json(reports);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching reports', error: error.message });
   }

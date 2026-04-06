@@ -7,7 +7,7 @@ import {
   FiUsers, FiTrendingUp, FiCheckCircle 
 } from 'react-icons/fi';
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import * as XLSX from 'xlsx';
 
 const Reports = () => {
@@ -28,6 +28,7 @@ const Reports = () => {
       const response = await axios.get('/api/admin/reports/placements');
       setPlacements(response.data);
     } catch (error) {
+      console.error('Error fetching reports:', error);
       toast.error('Error fetching placement reports');
     } finally {
       setLoading(false);
@@ -110,34 +111,39 @@ const Reports = () => {
   };
 
   const exportToPDF = () => {
-    const data = prepareExportData();
-    if (data.length === 0) return toast.info('No data to export');
+    try {
+      const data = prepareExportData();
+      if (data.length === 0) return toast.info('No data to export');
 
-    const doc = new jsPDF('l', 'mm', 'a4');
-    
-    // Add Report Header
-    doc.setFontSize(18);
-    doc.text("Placement Selection Report", 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${format(new Date(), 'PPP p')}`, 14, 30);
-    doc.text(`Total Placements: ${filteredPlacements.length} | Unique Students: ${uniquePlacedCount}`, 14, 35);
+      const doc = new jsPDF('l', 'mm', 'a4');
+      
+      // Add Report Header
+      doc.setFontSize(18);
+      doc.text("Placement Selection Report", 14, 22);
+      doc.setFontSize(11);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${format(new Date(), 'PPP p')}`, 14, 30);
+      doc.text(`Total Placements: ${filteredPlacements.length} | Unique Students: ${uniquePlacedCount}`, 14, 35);
 
-    const tableColumn = Object.keys(data[0]);
-    const tableRows = data.map(item => Object.values(item));
+      const tableColumn = Object.keys(data[0]);
+      const tableRows = data.map(item => Object.values(item));
 
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 40,
-      theme: 'striped',
-      headStyles: { fillColor: [102, 126, 234], textColor: 255 },
-      styles: { fontSize: 9 },
-      margin: { top: 40 }
-    });
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 40,
+        theme: 'striped',
+        headStyles: { fillColor: [102, 126, 234], textColor: 255 },
+        styles: { fontSize: 9, overflow: 'linebreak' },
+        margin: { top: 40 }
+      });
 
-    doc.save(`Placement_Report_${format(new Date(), 'yyyyMMdd')}.pdf`);
-    toast.success('PDF Exported Successfully');
+      doc.save(`Placement_Report_${format(new Date(), 'yyyyMMdd')}.pdf`);
+      toast.success('PDF Exported Successfully');
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      toast.error('Failed to generate PDF. Please try CSV or Excel.');
+    }
   };
 
   if (loading) return <div className="loading">Loading...</div>;
