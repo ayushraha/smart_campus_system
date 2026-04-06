@@ -510,10 +510,88 @@
 .sg-group-list::-webkit-scrollbar-thumb,
 .sg-messages::-webkit-scrollbar-thumb { background: #ede9fe; border-radius: 4px; }
 
-/* ── Responsive ───────────────────────────────────────────────────── */
+/* Attachment Button */
+.sg-attach-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 14px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.sg-attach-btn:hover:not(:disabled) { 
+  background: #e2e8f0; 
+  color: #6366f1;
+  transform: translateY(-1px);
+}
+
+/* File Message Bubbles */
+.sg-file-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.sg-chat-img {
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 12px;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.2s;
+}
+.sg-chat-img:hover { transform: scale(1.02); }
+
+.sg-file-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,0,0,0.05);
+  padding: 10px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.sg-bubble.mine .sg-file-info { background: rgba(0,0,0,0.15); }
+
+.sg-file-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sg-file-dl {
+  background: white;
+  color: #6366f1;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+}
+.sg-file-dl:hover { transform: scale(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+.sg-bubble.mine .sg-file-dl { color: #8b5cf6; }
+
+/* Responsive adjustments */
 @media (max-width: 640px) {
+  .sg-bubble-wrap { max-width: 85%; }
   .sg-sidebar { width: 100%; }
   .sg-chat-panel { display: none; }
   .sg-page.chat-open .sg-sidebar { display: none; }
   .sg-page.chat-open .sg-chat-panel { display: flex; }
 }
+

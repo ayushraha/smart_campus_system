@@ -5,6 +5,34 @@ const { auth, checkRole, checkApproved } = require('../middleware/auth');
 const StudyGroup = require('../models/StudyGroup');
 const StudyGroupMessage = require('../models/StudyGroupMessage');
 const Application = require('../models/Application');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// ─── Multer Config for Study Group Files ─────────────────────────────────────
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = 'uploads/study-groups';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|pdf|doc|docx|zip|txt/;
+    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowed.test(file.mimetype);
+    if (ext && mime) cb(null, true);
+    else cb(new Error('Format not supported'));
+  }
+});
 
 // All routes require auth + account approved
 router.use(auth, checkApproved);
@@ -210,20 +238,60 @@ router.post('/:id/messages', checkRole('student'), requireShortlisted, async (re
       return res.status(403).json({ success: false, message: 'Join the group to send messages' });
     }
 
-    const { content, type } = req.body;
-    if (!content || !content.trim()) {
+    const { content, fileUrl, fileName, fileType, type } = req.body;
+    
+    // Validate: Either content or file must be present
+    if (type === 'text' && (!content || !content.trim())) {
       return res.status(400).json({ success: false, message: 'Message cannot be empty' });
+    }
+    if (type === 'file' && !fileUrl) {
+      return res.status(400).json({ success: false, message: 'File URL is required' });
     }
 
     const message = await StudyGroupMessage.create({
       groupId: req.params.id,
       senderId: req.userId,
       senderName: req.user.name,
-      content: content.trim(),
+      content: content?.trim(),
+      fileUrl,
+      fileName,
+      fileType,
       type: type || 'text'
     });
 
     res.status(201).json({ success: true, message });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ─── POST upload file ────────────────────────────────────────────────────────
+router.post('/:id/upload', checkRole('student'), requireShortlisted, upload.single('file'), async (req, res) => {
+  try {
+    const group = await StudyGroup.findById(req.params.id);
+    if (!group || !group.isActive) {
+      return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+
+    const isMember = group.members.some(m => m.toString() === req.userId.toString());
+    if (!isMember) {
+      return res.status(403).json({ success: false, message: 'Join the group to share files' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    // Return the file info
+    const fileUrl = `/uploads/study-groups/${req.file.filename}`;
+    res.json({
+      success: true,
+      file: {
+        url: fileUrl,
+        name: req.file.originalname,
+        type: req.file.mimetype
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

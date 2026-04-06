@@ -5,7 +5,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import './StudyGroups.css';
 import {
   Users, Plus, Search, MessageCircle, LogIn, LogOut,
-  Trash2, Send, X, ChevronLeft, Loader, Lock, ShieldCheck
+  Trash2, Send, X, ChevronLeft, Loader, Lock, ShieldCheck,
+  FilePlus, File, Download, Image
 } from 'lucide-react';
 
 const API  = process.env.REACT_APP_API_URL;
@@ -28,10 +29,12 @@ export default function StudyGroups() {
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [loadingChat, setLoadingChat]    = useState(false);
   const [sendingMsg, setSendingMsg]      = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [showCreate, setShowCreate]      = useState(false);
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [form, setForm] = useState({ name: '', company: '', description: '', maxMembers: 30 });
 
+  const fileInputRef   = useRef(null);
   const messagesEndRef = useRef(null);
   const pollRef        = useRef(null);
   const lastMsgTime    = useRef(null);
@@ -181,6 +184,53 @@ export default function StudyGroups() {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to send');
     } finally { setSendingMsg(false); }
+  };
+
+  // ── File Upload ────────────────────────────────────────────────────────────
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !activeGroup) return;
+    
+    // Size check
+    if (file.size > 10 * 1024 * 1024) return toast.error('File too large (max 10MB)');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setUploadingFile(true);
+    try {
+      const uploadRes = await axios.post(
+        `${API}/study-groups/${activeGroup._id}/upload`,
+        formData,
+        { headers: { ...HEADERS(), 'Content-Type': 'multipart/form-data' } }
+      );
+
+      if (uploadRes.data.success) {
+        const { url, name, type } = uploadRes.data.file;
+        
+        // Now send the message with file info
+        const msgRes = await axios.post(
+          `${API}/study-groups/${activeGroup._id}/messages`,
+          { 
+            type: 'file',
+            fileUrl: url,
+            fileName: name,
+            fileType: type
+          },
+          { headers: HEADERS() }
+        );
+
+        if (msgRes.data.success) {
+          setMessages(prev => [...prev, msgRes.data.message]);
+          lastMsgTime.current = msgRes.data.message.createdAt;
+        }
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Upload failed');
+    } finally { 
+      setUploadingFile(false); 
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   // ── Create group ───────────────────────────────────────────────────────────
@@ -450,7 +500,25 @@ export default function StudyGroups() {
                           <div className="sg-bubble-wrap">
                             {!isMe && <div className="sg-sender-name">{m.senderName}</div>}
                             <div className={`sg-bubble ${isMe ? 'mine' : 'theirs'}`}>
-                              {m.content}
+                              {m.type === 'file' ? (
+                                <div className="sg-file-msg">
+                                  {m.fileType?.startsWith('image/') ? (
+                                    <a href={m.fileUrl} target="_blank" rel="noreferrer">
+                                      <img src={m.fileUrl} alt="uploaded" className="sg-chat-img" />
+                                    </a>
+                                  ) : (
+                                    <div className="sg-file-info">
+                                      {m.fileType?.includes('pdf') ? <File size={20} color="#f43f5e" /> : <File size={20} />}
+                                      <div className="sg-file-name" title={m.fileName}>{m.fileName}</div>
+                                      <a href={m.fileUrl} download={m.fileName} className="sg-file-dl">
+                                        <Download size={14} />
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                m.content
+                              )}
                             </div>
                             <div className="sg-msg-time">{formatTime(m.createdAt)}</div>
                           </div>
@@ -464,6 +532,20 @@ export default function StudyGroups() {
                 {/* Send Box */}
                 {isMemberOf(activeGroup) ? (
                   <form className="sg-send-bar" onSubmit={sendMessage}>
+                    <button 
+                      type="button" 
+                      className="sg-attach-btn"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                    >
+                      {uploadingFile ? <Loader size={16} className="sg-spin" /> : <FilePlus size={18} />}
+                    </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      style={{ display: 'none' }}
+                      onChange={handleFileUpload}
+                    />
                     <input
                       className="sg-msg-input"
                       placeholder="Type a message… (Enter to send)"
@@ -474,7 +556,7 @@ export default function StudyGroups() {
                     <button
                       type="submit"
                       className="sg-send-btn"
-                      disabled={sendingMsg || !msgInput.trim()}
+                      disabled={sendingMsg || uploadingFile || !msgInput.trim()}
                     >
                       {sendingMsg ? <Loader size={16} className="sg-spin" /> : <Send size={16} />}
                     </button>

@@ -19,13 +19,16 @@ const studyGroupMessageSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true,
+    required: function() { return this.type === 'text'; }, // Content is only required for text messages
     trim: true,
     maxlength: 1000
   },
+  fileUrl: String,
+  fileName: String,
+  fileType: String,
   type: {
     type: String,
-    enum: ['text', 'link', 'resource'],
+    enum: ['text', 'link', 'resource', 'file'],
     default: 'text'
   }
 }, { timestamps: true });
